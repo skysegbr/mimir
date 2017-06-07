@@ -60,7 +60,7 @@ impl Statement {
     /// * `name` - a string in the encoding used for CHAR data giving the name of the placeholder
     /// which is to be bound.
     /// * `var` - a variable which is to be bound.
-    pub fn bind_by_name(&self, name: &str, var: Var) -> Result<()> {
+    pub fn bind_by_name(&self, name: &str, var: &Var) -> Result<()> {
         let name_s = ODPIStr::from(name);
 
         /// TODO: Test this when Var is complete.
@@ -97,7 +97,7 @@ impl Statement {
     pub fn bind_value_by_name(&self,
                               name: &str,
                               native_type: enums::ODPINativeTypeNum,
-                              data: Data)
+                              data: &Data)
                               -> Result<()> {
         let name_s = ODPIStr::from(name);
 
@@ -125,7 +125,7 @@ impl Statement {
     pub fn bind_value_by_pos(&self,
                              pos: u32,
                              native_type: enums::ODPINativeTypeNum,
-                             data: Data)
+                             data: &Data)
                              -> Result<()> {
         try_dpi!(externs::dpiStmt_bindValueByPos(self.inner, pos, native_type, data.data()),
                  Ok(()),
@@ -445,613 +445,485 @@ impl Info {
 
 #[cfg(test)]
 mod test {
+    use test::CREDS;
     use connection::Connection;
+    use context::Context;
     use data::Data;
-    use error;
-    use odpi::flags;
-    use odpi::enums::ODPIFetchMode::*;
+    use error::Result;
     use odpi::enums::ODPINativeTypeNum::*;
     use odpi::enums::ODPIOracleTypeNum::*;
-    use odpi::enums::ODPIStatementType::*;
+    use odpi::flags;
     use odpi::structs::{ODPIBytes, ODPIDataValueUnion};
-    use rand::{self, Rng};
-    use test::{ContextResult, CREDS, CTXT, ENC};
+    use std::ffi::CString;
     use util::ODPIStr;
 
-    enum ConnResult {
-        Ok(Connection),
-        Err(error::Error),
+    fn within_context(ctxt: &Context) -> Result<()> {
+        let mut ccp = ctxt.init_common_create_params()?;
+        let enc_cstr = CString::new("UTF-8").expect("badness");
+        ccp.set_encoding(enc_cstr.as_ptr());
+        ccp.set_nchar_encoding(enc_cstr.as_ptr());
+
+        let conn = Connection::create(&ctxt,
+                                      Some(&CREDS[0]),
+                                      Some(&CREDS[1]),
+                                      Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
+                                      Some(ccp),
+                                      None)?;
+
+        let dual = conn.prepare_stmt(Some("select 1 from dual"), None, false)?;
+        dual.add_ref()?;
+        dual.release()?;
+
+        let bbn = conn.prepare_stmt(Some("select * from username where username = :username"),
+                                    None,
+                                    false)?;
+        let username_var = conn.new_var(Varchar, Bytes, 1, 256, false, false)?;
+        bbn.bind_by_name(":username", &username_var)?;
+        let mut cols = bbn.execute(flags::EXEC_DEFAULT)?;
+        assert_eq!(cols, 2);
+
+        let bbp = conn.prepare_stmt(Some("select * from username where username = :username"),
+                                    None,
+                                    false)?;
+        bbp.bind_by_pos(1, &username_var)?;
+        cols = bbp.execute(flags::EXEC_DEFAULT)?;
+        assert_eq!(cols, 2);
+
+        let blah = ODPIStr::from("test");
+        let enc = String::from("UTF-8\0");
+
+        let odpi_bytes = ODPIBytes {
+            ptr: blah.ptr() as *mut i8,
+            length: blah.len(),
+            encoding: enc.as_ptr() as *const ::std::os::raw::c_char,
+        };
+
+        let t_data = Data::new(false, ODPIDataValueUnion { as_bytes: odpi_bytes });
+        let bbvn = conn.prepare_stmt(Some("select * from username where username = :username"),
+                                     None,
+                                     false)?;
+        bbvn.bind_value_by_name(":username", Bytes, &t_data)?;
+        cols = bbvn.execute(flags::EXEC_DEFAULT)?;
+        assert_eq!(cols, 2);
+
+        let bbvp = conn.prepare_stmt(Some("select * from username where username = :username"),
+                                     None,
+                                     false)?;
+        let t_data_1 = Data::new(false, ODPIDataValueUnion { as_bytes: odpi_bytes });
+        bbvp.bind_value_by_pos(1, Bytes, &t_data_1)?;
+        cols = bbvp.execute(flags::EXEC_DEFAULT)?;
+        assert_eq!(cols, 2);
+
+        dual.close(None)?;
+        bbn.close(None)?;
+        bbp.close(None)?;
+        bbvn.close(None)?;
+        bbvp.close(None)?;
+
+        Ok(())
     }
 
-    unsafe impl Sync for ConnResult {}
+    fn statement_res() -> Result<()> {
+        use std::io::{self, Write};
 
-    lazy_static! {
-        static ref CONN: ConnResult = {
-            let ctxt = match *CTXT {
-                ContextResult::Ok(ref ctxt) => ctxt,
-                ContextResult::Err(ref _e) => return ConnResult::Err(
-                    error::ErrorKind::Connection("CONTEXT".to_string()).into()
-                ),
-            };
-            let ccp = match ctxt.init_common_create_params() {
-                Ok(mut ccp) => {
-                    ccp.set_encoding(ENC.as_ptr());
-                    ccp.set_nchar_encoding(ENC.as_ptr());
-                    ccp
-                },
-                Err(e) => return ConnResult::Err(e),
-            };
-
-            match Connection::create(ctxt,
-                                     Some(&CREDS[0]),
-                                     Some(&CREDS[1]),
-                                     Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
-                                     Some(ccp),
-                                     None) {
-                Ok(conn) => ConnResult::Ok(conn),
-                Err(e) => ConnResult::Err(e),
+        let ctxt = Context::create()?;
+        match within_context(&ctxt) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                writeln!(io::stderr(), "{}", ctxt.get_error())?;
+                Err(e)
             }
-        };
-    }
-
-    #[test]
-    fn add_ref_release() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select 1 from dual"), None, false) {
-            Ok(stmt) => {
-                match stmt.add_ref() {
-                    Ok(_) => {
-                        match stmt.release() {
-                            Ok(_) => assert!(true),
-                            Err(_) => assert!(false),
-                        }
-                    }
-                    Err(e) => ::test::error_info(e),
-                }
-            }
-            Err(e) => ::test::error_info(e),
         }
     }
 
     #[test]
-    fn bind_by_name() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.new_var(Varchar, Bytes, 1, 256, false, false) {
-            Ok(var) => {
-                match conn.prepare_stmt(Some("select * from username where username = :username"),
-                                        None,
-                                        false) {
-                    Ok(stmt) => {
-                        match stmt.bind_by_name(":username", var) {
-                            Ok(_) => assert!(true),
-                            Err(e) => ::test::error_info(e),
-                        }
-                    }
-                    Err(e) => ::test::error_info(e),
-                }
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
+    fn statement() {
+        use std::io::{self, Write};
 
-    #[test]
-    fn bind_by_pos() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.new_var(Varchar, Bytes, 1, 256, false, false) {
-            Ok(ref var) => {
-                match conn.prepare_stmt(Some("select * from username where username = :username"),
-                                        None,
-                                        false) {
-                    Ok(stmt) => {
-                        match stmt.bind_by_pos(1, var) {
-                            Ok(_) => assert!(true),
-                            Err(e) => ::test::error_info(e),
-                        }
-                    }
-                    Err(e) => ::test::error_info(e),
-                }
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
-
-    #[test]
-    fn bind_value_by_name() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username where username = :username"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                let blah = ODPIStr::from("test");
-                let enc = String::from("UTF-8\0");
-
-                let odpi_bytes = ODPIBytes {
-                    ptr: blah.ptr() as *mut i8,
-                    length: blah.len(),
-                    encoding: enc.as_ptr() as *const ::std::os::raw::c_char,
-                };
-
-                let data = Data::new(false, ODPIDataValueUnion { as_bytes: odpi_bytes });
-                match stmt.bind_value_by_name(":username", Bytes, data) {
-                    Ok(_) => assert!(true),
-                    Err(e) => ::test::error_info(e),
-                }
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
-
-    #[test]
-    fn bind_value_by_pos() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username where username = :username"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                let blah = ODPIStr::from("test");
-                let enc = String::from("UTF-8\0");
-
-                let odpi_bytes = ODPIBytes {
-                    ptr: blah.ptr() as *mut i8,
-                    length: blah.len(),
-                    encoding: enc.as_ptr() as *const ::std::os::raw::c_char,
-                };
-
-                let data = Data::new(false, ODPIDataValueUnion { as_bytes: odpi_bytes });
-                match stmt.bind_value_by_pos(1, Bytes, data) {
-                    Ok(_) => assert!(true),
-                    Err(_e) => assert!(false),
-                }
-            }
-            Err(_e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn close() {
-        let ctxt = match *CTXT {
-            ContextResult::Ok(ref ctxt) => ctxt,
-            ContextResult::Err(ref _e) => return assert!(false),
-        };
-        let ccp = match ctxt.init_common_create_params() {
-            Ok(mut ccp) => {
-                ccp.set_encoding(ENC.as_ptr());
-                ccp.set_nchar_encoding(ENC.as_ptr());
-                ccp
-            }
-            Err(_e) => return assert!(false),
-        };
-        let conn =
-            match Connection::create(ctxt,
-                                     Some(&CREDS[0]),
-                                     Some(&CREDS[1]),
-                                     Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
-                                     Some(ccp),
-                                     None) {
-                Ok(conn) => conn,
-                Err(_e) => return assert!(false),
-            };
-
-        match conn.prepare_stmt(Some("select * from username where username = :username"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                match stmt.close(None) {
-                    Ok(_) => assert!(true),
-                    Err(e) => ::test::error_info(e),
-                }
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
-
-    #[test]
-    fn execute() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username"), None, false) {
-            Ok(stmt) => {
-                match stmt.execute(flags::EXEC_DEFAULT) {
-                    Ok(cols) => assert!(cols == 2),
-                    Err(e) => ::test::error_info(e),
-                }
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
-
-    #[test]
-    // #[ignore]
-    fn execute_many() {
-        let mut rng = rand::thread_rng();
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        let stmt =
-            match conn.prepare_stmt(Some("insert into username values (:1, :2)"), None, false) {
-                Ok(stmt) => stmt,
-                Err(e) => return ::test::error_info(e),
-            };
-
-        let id_var = match conn.new_var(Number, Int64, 2, 0, false, false) {
-            Ok(var) => var,
-            Err(e) => return ::test::error_info(e),
-        };
-
-
-        let mut id_data = match id_var.get_data() {
-            Ok(data) => data,
-            Err(e) => return ::test::error_info(e),
-        };
-
-        for data in id_data.iter_mut() {
-            (*data).is_null = 0;
-            (*data).value.as_int_64 = rng.gen::<i64>().abs();
-        }
-
-        match stmt.bind_by_pos(1, &id_var) {
+        match statement_res() {
             Ok(_) => assert!(true),
-            Err(e) => ::test::error_info(e),
-        }
-
-        let username_var = match conn.new_var(Varchar, Bytes, 2, 256, true, false) {
-            Ok(var) => var,
-            Err(e) => return ::test::error_info(e),
-        };
-
-        for i in 0..2 {
-            match username_var.set_from_bytes(i, "jozias") {
-                Ok(_) => assert!(true),
-                Err(e) => ::test::error_info(e),
+            Err(e) => {
+                writeln!(io::stderr(), "{}", e).expect("badness");
+                assert!(false);
             }
         }
-
-        match stmt.bind_by_pos(2, &username_var) {
-            Ok(_) => assert!(true),
-            Err(e) => ::test::error_info(e),
-        }
-
-        match stmt.execute_many(flags::EXEC_DEFAULT, 2) {
-            Ok(_) => assert!(true),
-            Err(e) => ::test::error_info(e),
-        }
     }
 
-    #[test]
-    fn fetch() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username where username = 'jozias'"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                match stmt.execute(flags::EXEC_DEFAULT) {
-                    Ok(cols) => {
-                        assert!(cols == 2);
-                        match stmt.fetch() {
-                            Ok((found, buffer_row_index)) => {
-                                assert!(found);
-                                assert!(buffer_row_index == 0);
-                            }
-                            Err(_e) => assert!(false),
-                        }
-                    }
-                    Err(_e) => assert!(false),
-                }
-            }
-            Err(_e) => assert!(false),
-        }
-    }
+    // #[test]
+    // // #[ignore]
+    // fn execute_many() {
+    //     let mut rng = rand::thread_rng();
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
 
-    #[test]
-    fn fetch_rows() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username where username like 'jozia%'"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                match stmt.execute(flags::EXEC_DEFAULT) {
-                    Ok(cols) => {
-                        assert!(cols == 2);
-                        match stmt.fetch_rows(10) {
-                            Ok((buffer_row_index, num_rows_fetched, more_rows)) => {
-                                assert!(!more_rows);
-                                assert!(buffer_row_index == 0);
-                                assert!(num_rows_fetched == 4);
-                            }
-                            Err(_e) => assert!(false),
-                        }
-                    }
-                    Err(_e) => assert!(false),
-                }
-            }
-            Err(_e) => assert!(false),
-        }
-    }
+    //     let stmt =
+    //         match conn.prepare_stmt(Some("insert into username values (:1, :2)"), None, false) {
+    //             Ok(stmt) => stmt,
+    //             Err(e) => return ::test::error_info(e),
+    //         };
 
-    #[test]
-    fn get_batch_error_count() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username where username like 'jozia%'"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                match stmt.get_batch_error_count() {
-                    Ok(count) => assert!(count == 0),
-                    Err(_e) => assert!(false),
-                }
-            }
-            Err(_e) => assert!(false),
-        }
-    }
+    //     let id_var = match conn.new_var(Number, Int64, 2, 0, false, false) {
+    //         Ok(var) => var,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
 
-    #[test]
-    fn get_bind_count() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
 
-        let stmt =
-            match conn.prepare_stmt(Some("insert into username values (:1, :2)"), None, false) {
-                Ok(stmt) => stmt,
-                Err(e) => return ::test::error_info(e),
-            };
+    //     let mut id_data = match id_var.get_data() {
+    //         Ok(data) => data,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
 
-        match stmt.get_bind_count() {
-            Ok(count) => assert!(count == 2),
-            Err(e) => return ::test::error_info(e),
-        }
-    }
+    //     for data in id_data.iter_mut() {
+    //         (*data).is_null = 0;
+    //         (*data).value.as_int_64 = rng.gen::<i64>().abs();
+    //     }
 
-    #[test]
-    fn get_bind_names() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
+    //     match stmt.bind_by_pos(1, &id_var) {
+    //         Ok(_) => assert!(true),
+    //         Err(e) => ::test::error_info(e),
+    //     }
 
-        let stmt = match conn.prepare_stmt(Some("insert into username values (:id, :username)"),
-                                           None,
-                                           false) {
-            Ok(stmt) => stmt,
-            Err(e) => return ::test::error_info(e),
-        };
+    //     let username_var = match conn.new_var(Varchar, Bytes, 2, 256, true, false) {
+    //         Ok(var) => var,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
 
-        match stmt.get_bind_names(2) {
-            Ok(names) => {
-                assert!(names.len() == 2);
-                for (idx, name) in names.iter().enumerate() {
-                    match idx {
-                        0 => assert!(name == "ID"),
-                        1 => assert!(name == "USERNAME"),
-                        _ => assert!(false),
-                    }
-                }
-            }
-            Err(e) => return ::test::error_info(e),
-        }
-    }
+    //     for i in 0..2 {
+    //         match username_var.set_from_bytes(i, "jozias") {
+    //             Ok(_) => assert!(true),
+    //             Err(e) => ::test::error_info(e),
+    //         }
+    //     }
 
-    #[test]
-    fn get_info() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
+    //     match stmt.bind_by_pos(2, &username_var) {
+    //         Ok(_) => assert!(true),
+    //         Err(e) => ::test::error_info(e),
+    //     }
 
-        let stmt = match conn.prepare_stmt(Some("insert into username values (:id, :username)"),
-                                           None,
-                                           false) {
-            Ok(stmt) => stmt,
-            Err(e) => return ::test::error_info(e),
-        };
+    //     match stmt.execute_many(flags::EXEC_DEFAULT, 2) {
+    //         Ok(_) => assert!(true),
+    //         Err(e) => ::test::error_info(e),
+    //     }
+    // }
 
-        match stmt.get_info() {
-            Ok(info) => {
-                assert!(info.is_dml());
-                assert!(info.statement_type() == Insert);
-            }
-            Err(e) => return ::test::error_info(e),
-        }
-    }
+    // #[test]
+    // fn fetch() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+    //     match conn.prepare_stmt(Some("select * from username where username = 'jozias'"),
+    //                             None,
+    //                             false) {
+    //         Ok(stmt) => {
+    //             match stmt.execute(flags::EXEC_DEFAULT) {
+    //                 Ok(cols) => {
+    //                     assert!(cols == 2);
+    //                     match stmt.fetch() {
+    //                         Ok((found, buffer_row_index)) => {
+    //                             assert!(found);
+    //                             assert!(buffer_row_index == 0);
+    //                         }
+    //                         Err(_e) => assert!(false),
+    //                     }
+    //                 }
+    //                 Err(_e) => assert!(false),
+    //             }
+    //         }
+    //         Err(_e) => assert!(false),
+    //     }
+    // }
 
-    #[test]
-    fn get_num_query_columns() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
+    // #[test]
+    // fn fetch_rows() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+    //     match conn.prepare_stmt(Some("select * from username where username like 'jozia%'"),
+    //                             None,
+    //                             false) {
+    //         Ok(stmt) => {
+    //             match stmt.execute(flags::EXEC_DEFAULT) {
+    //                 Ok(cols) => {
+    //                     assert!(cols == 2);
+    //                     match stmt.fetch_rows(10) {
+    //                         Ok((buffer_row_index, num_rows_fetched, more_rows)) => {
+    //                             assert!(!more_rows);
+    //                             assert!(buffer_row_index == 0);
+    //                             assert!(num_rows_fetched == 4);
+    //                         }
+    //                         Err(_e) => assert!(false),
+    //                     }
+    //                 }
+    //                 Err(_e) => assert!(false),
+    //             }
+    //         }
+    //         Err(_e) => assert!(false),
+    //     }
+    // }
 
-        let stmt = match conn.prepare_stmt(Some("select * from username"), None, false) {
-            Ok(stmt) => stmt,
-            Err(e) => return ::test::error_info(e),
-        };
+    // #[test]
+    // fn get_batch_error_count() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+    //     match conn.prepare_stmt(Some("select * from username where username like 'jozia%'"),
+    //                             None,
+    //                             false) {
+    //         Ok(stmt) => {
+    //             match stmt.get_batch_error_count() {
+    //                 Ok(count) => assert!(count == 0),
+    //                 Err(_e) => assert!(false),
+    //             }
+    //         }
+    //         Err(_e) => assert!(false),
+    //     }
+    // }
 
-        match stmt.execute(flags::EXEC_DEFAULT) {
-            Ok(_) => assert!(true),
-            Err(e) => return ::test::error_info(e),
-        }
+    // #[test]
+    // fn get_bind_count() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
 
-        match stmt.get_num_query_columns() {
-            Ok(cols) => assert_eq!(cols, 2),
-            Err(e) => return ::test::error_info(e),
-        }
-    }
+    //     let stmt =
+    //         match conn.prepare_stmt(Some("insert into username values (:1, :2)"), None, false) {
+    //             Ok(stmt) => stmt,
+    //             Err(e) => return ::test::error_info(e),
+    //         };
 
-    #[test]
-    fn get_query_info() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username where username = 'jozias'"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                match stmt.execute(flags::EXEC_DEFAULT) {
-                    Ok(cols) => {
-                        assert!(cols == 2);
-                        match stmt.get_query_info(1) {
-                            Ok(qi) => {
-                                assert_eq!(qi.name(), "ID");
-                                assert_eq!(qi.oracle_type_num(), Number);
-                                assert_eq!(qi.default_native_type_num(), Double);
-                                assert_eq!(qi.db_size_in_bytes(), 0);
-                                assert_eq!(qi.client_size_in_bytes(), 0);
-                                assert_eq!(qi.size_in_chars(), 0);
-                                assert_eq!(qi.precision(), 38);
-                                assert_eq!(qi.scale(), 0);
-                                assert!(!qi.null_ok());
-                                assert!(qi.object_type().is_none());
-                            }
-                            Err(e) => return ::test::error_info(e),
-                        }
-                        match stmt.get_query_info(2) {
-                            Ok(qi) => {
-                                assert!(qi.name() == "USERNAME");
-                                assert_eq!(qi.oracle_type_num(), Varchar);
-                                assert_eq!(qi.default_native_type_num(), Bytes);
-                                assert_eq!(qi.db_size_in_bytes(), 256);
-                                assert_eq!(qi.client_size_in_bytes(), 1024);
-                                assert_eq!(qi.size_in_chars(), 256);
-                                assert_eq!(qi.precision(), 0);
-                                assert_eq!(qi.scale(), 0);
-                                assert!(qi.null_ok());
-                                assert!(qi.object_type().is_none());
-                            }
-                            Err(e) => return ::test::error_info(e),
-                        }
-                    }
-                    Err(e) => return ::test::error_info(e),
-                }
-            }
-            Err(e) => return ::test::error_info(e),
-        }
-    }
+    //     match stmt.get_bind_count() {
+    //         Ok(count) => assert!(count == 2),
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+    // }
 
-    #[test]
-    fn get_query_value() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.prepare_stmt(Some("select * from username where username = 'jozias' order by \
-                                      id"),
-                                None,
-                                false) {
-            Ok(stmt) => {
-                match stmt.execute(flags::EXEC_DEFAULT) {
-                    Ok(cols) => {
-                        assert!(cols == 2);
-                        match stmt.fetch() {
-                            Ok(_) => assert!(true),
-                            Err(_e) => assert!(false),
-                        }
-                        match stmt.get_query_value(1) {
-                            Ok((t, ptr)) => {
-                                assert_eq!(t, Double);
-                                let data: Data = ptr.into();
-                                assert_eq!(data.as_double(), 1.0);
-                            }
-                            Err(_e) => assert!(false),
-                        }
-                        match stmt.get_query_value(2) {
-                            Ok((t, ptr)) => {
-                                assert_eq!(t, Bytes);
-                                let data: Data = ptr.into();
-                                assert_eq!(data.as_string(), "jozias");
-                            }
-                            Err(_e) => assert!(false),
-                        }
-                    }
-                    Err(_e) => assert!(false),
-                }
-            }
-            Err(_e) => assert!(false),
-        }
-    }
+    // #[test]
+    // fn get_bind_names() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
 
-    #[test]
-    fn get_row_count() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
+    //     let stmt = match conn.prepare_stmt(Some("insert into username values (:id, :username)"),
+    //                                        None,
+    //                                        false) {
+    //         Ok(stmt) => stmt,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
 
-        let stmt = match conn.prepare_stmt(Some("select * from username"), None, false) {
-            Ok(stmt) => stmt,
-            Err(e) => return ::test::error_info(e),
-        };
+    //     match stmt.get_bind_names(2) {
+    //         Ok(names) => {
+    //             assert!(names.len() == 2);
+    //             for (idx, name) in names.iter().enumerate() {
+    //                 match idx {
+    //                     0 => assert!(name == "ID"),
+    //                     1 => assert!(name == "USERNAME"),
+    //                     _ => assert!(false),
+    //                 }
+    //             }
+    //         }
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+    // }
 
-        match stmt.execute(flags::EXEC_DEFAULT) {
-            Ok(cols) => {
-                assert!(cols == 2);
-                match stmt.fetch_rows(10) {
-                    Ok(_) => assert!(true),
-                    Err(e) => return ::test::error_info(e),
-                }
-                match stmt.get_row_count() {
-                    Ok(rc) => assert_eq!(rc, 4),
-                    Err(e) => return ::test::error_info(e),
-                }
-            }
-            Err(e) => return ::test::error_info(e),
-        }
-    }
+    // #[test]
+    // fn get_info() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
 
-    #[test]
-    fn scroll() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
+    //     let stmt = match conn.prepare_stmt(Some("insert into username values (:id, :username)"),
+    //                                        None,
+    //                                        false) {
+    //         Ok(stmt) => stmt,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
 
-        let stmt = match conn.prepare_stmt(Some("select * from username"), None, true) {
-            Ok(stmt) => stmt,
-            Err(e) => return ::test::error_info(e),
-        };
+    //     match stmt.get_info() {
+    //         Ok(info) => {
+    //             assert!(info.is_dml());
+    //             assert!(info.statement_type() == Insert);
+    //         }
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+    // }
 
-        match stmt.execute(flags::EXEC_DEFAULT) {
-            Ok(cols) => {
-                assert!(cols == 2);
-                match stmt.fetch_rows(10) {
-                    Ok(_) => assert!(true),
-                    Err(e) => return ::test::error_info(e),
-                }
-                match stmt.scroll(Last, 0, 0) {
-                    Ok(_) => assert!(true),
-                    Err(e) => return ::test::error_info(e),
-                }
-            }
-            Err(e) => return ::test::error_info(e),
-        }
-    }
+    // #[test]
+    // fn get_num_query_columns() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+
+    //     let stmt = match conn.prepare_stmt(Some("select * from username"), None, false) {
+    //         Ok(stmt) => stmt,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
+
+    //     match stmt.execute(flags::EXEC_DEFAULT) {
+    //         Ok(_) => assert!(true),
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+
+    //     match stmt.get_num_query_columns() {
+    //         Ok(cols) => assert_eq!(cols, 2),
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+    // }
+
+    // #[test]
+    // fn get_query_info() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+    //     match conn.prepare_stmt(Some("select * from username where username = 'jozias'"),
+    //                             None,
+    //                             false) {
+    //         Ok(stmt) => {
+    //             match stmt.execute(flags::EXEC_DEFAULT) {
+    //                 Ok(cols) => {
+    //                     assert!(cols == 2);
+    //                     match stmt.get_query_info(1) {
+    //                         Ok(qi) => {
+    //                             assert_eq!(qi.name(), "ID");
+    //                             assert_eq!(qi.oracle_type_num(), Number);
+    //                             assert_eq!(qi.default_native_type_num(), Double);
+    //                             assert_eq!(qi.db_size_in_bytes(), 0);
+    //                             assert_eq!(qi.client_size_in_bytes(), 0);
+    //                             assert_eq!(qi.size_in_chars(), 0);
+    //                             assert_eq!(qi.precision(), 38);
+    //                             assert_eq!(qi.scale(), 0);
+    //                             assert!(!qi.null_ok());
+    //                             assert!(qi.object_type().is_none());
+    //                         }
+    //                         Err(e) => return ::test::error_info(e),
+    //                     }
+    //                     match stmt.get_query_info(2) {
+    //                         Ok(qi) => {
+    //                             assert!(qi.name() == "USERNAME");
+    //                             assert_eq!(qi.oracle_type_num(), Varchar);
+    //                             assert_eq!(qi.default_native_type_num(), Bytes);
+    //                             assert_eq!(qi.db_size_in_bytes(), 256);
+    //                             assert_eq!(qi.client_size_in_bytes(), 1024);
+    //                             assert_eq!(qi.size_in_chars(), 256);
+    //                             assert_eq!(qi.precision(), 0);
+    //                             assert_eq!(qi.scale(), 0);
+    //                             assert!(qi.null_ok());
+    //                             assert!(qi.object_type().is_none());
+    //                         }
+    //                         Err(e) => return ::test::error_info(e),
+    //                     }
+    //                 }
+    //                 Err(e) => return ::test::error_info(e),
+    //             }
+    //         }
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+    // }
+
+    // #[test]
+    // fn get_query_value() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+    //     match conn.prepare_stmt(Some("select * from username where username = 'jozias' order by \
+    //                                   id"),
+    //                             None,
+    //                             false) {
+    //         Ok(stmt) => {
+    //             match stmt.execute(flags::EXEC_DEFAULT) {
+    //                 Ok(cols) => {
+    //                     assert!(cols == 2);
+    //                     match stmt.fetch() {
+    //                         Ok(_) => assert!(true),
+    //                         Err(_e) => assert!(false),
+    //                     }
+    //                     match stmt.get_query_value(1) {
+    //                         Ok((t, ptr)) => {
+    //                             assert_eq!(t, Double);
+    //                             let data: Data = ptr.into();
+    //                             assert_eq!(data.as_double(), 1.0);
+    //                         }
+    //                         Err(_e) => assert!(false),
+    //                     }
+    //                     match stmt.get_query_value(2) {
+    //                         Ok((t, ptr)) => {
+    //                             assert_eq!(t, Bytes);
+    //                             let data: Data = ptr.into();
+    //                             assert_eq!(data.as_string(), "jozias");
+    //                         }
+    //                         Err(_e) => assert!(false),
+    //                     }
+    //                 }
+    //                 Err(_e) => assert!(false),
+    //             }
+    //         }
+    //         Err(_e) => assert!(false),
+    //     }
+    // }
+
+    // #[test]
+    // fn get_row_count() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+
+    //     let stmt = match conn.prepare_stmt(Some("select * from username"), None, false) {
+    //         Ok(stmt) => stmt,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
+
+    //     match stmt.execute(flags::EXEC_DEFAULT) {
+    //         Ok(cols) => {
+    //             assert!(cols == 2);
+    //             match stmt.fetch_rows(10) {
+    //                 Ok(_) => assert!(true),
+    //                 Err(e) => return ::test::error_info(e),
+    //             }
+    //             match stmt.get_row_count() {
+    //                 Ok(rc) => assert_eq!(rc, 4),
+    //                 Err(e) => return ::test::error_info(e),
+    //             }
+    //         }
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+    // }
+
+    // #[test]
+    // fn scroll() {
+    //     let conn = match *CONN {
+    //         ConnResult::Ok(ref conn) => conn,
+    //         ConnResult::Err(ref _e) => return assert!(false),
+    //     };
+
+    //     let stmt = match conn.prepare_stmt(Some("select * from username"), None, true) {
+    //         Ok(stmt) => stmt,
+    //         Err(e) => return ::test::error_info(e),
+    //     };
+
+    //     match stmt.execute(flags::EXEC_DEFAULT) {
+    //         Ok(cols) => {
+    //             assert!(cols == 2);
+    //             match stmt.fetch_rows(10) {
+    //                 Ok(_) => assert!(true),
+    //                 Err(e) => return ::test::error_info(e),
+    //             }
+    //             match stmt.scroll(Last, 0, 0) {
+    //                 Ok(_) => assert!(true),
+    //                 Err(e) => return ::test::error_info(e),
+    //             }
+    //         }
+    //         Err(e) => return ::test::error_info(e),
+    //     }
+    // }
 }

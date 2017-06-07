@@ -6,7 +6,7 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-//! ODPI-C Public Structs.
+//! ODPI-C public structs.
 use chrono::{DateTime, TimeZone, UTC};
 use odpi::{enums, externs, flags, opaque};
 use std::os::raw::{c_char, c_int, c_void};
@@ -19,25 +19,26 @@ use util::ODPIStr;
 /// creating standalone connections. These values are ignored when acquiring a connection from a
 /// session pool or when using DRCP (Database Resident Connection Pooling). All values must be set
 /// to valid values prior to being used in the `ODPIConnCreateParams` structure and must remain
-/// valid until the execution of `dpiConn_create()` completes. Values set using this structure are
-/// available in logon triggers by using the `sys_context()` SQL function.
+/// valid until the execution of `Connection::create()` completes. Values set using this structure
+/// are available in logon triggers by using the `sys_context()` SQL function.
 pub struct ODPIAppContext {
-    /// Specifies the value of the "namespace" parameter to sys_context(). It is expected to be a
-    /// byte string in the encoding specified in the dpiConnCreateParams structure and must not be
-    /// NULL.
+    /// Specifies the value of the "namespace" parameter to `sys_context()`. It is expected to be a
+    /// byte string in the encoding specified in the `ODPIConnCreateParams` structure and must not
+    /// be NULL.
     pub namespace_name: *const c_char,
-    /// Specifies the length of the dpiAppContext.namespaceName member, in bytes.
+    /// Specifies the length of the `namespace_name` member, in bytes.
     pub namespace_name_length: u32,
-    /// Specifies the value of the "parameter" parameter to sys_context(). It is expected to be a
-    /// byte string in the encoding specified in the dpiConnCreateParams structure and must not be
-    /// NULL.
+    /// Specifies the value of the "parameter" parameter to `sys_context()`. It is expected to be a
+    /// byte string in the encoding specified in the `ODPIConnCreateParams` structure and must not
+    /// be NULL.
     pub name: *const c_char,
-    /// Specifies the length of the dpiAppContext.name member, in bytes.
+    /// Specifies the length of the `name` member, in bytes.
     pub name_length: u32,
-    /// Specifies the value that will be returned from sys_context(). It is expected to be a byte
-    /// string in the encoding specified in the dpiConnCreateParams structure and must not be NULL.
+    /// Specifies the value that will be returned from `sys_context()`. It is expected to be a byte
+    /// string in the encoding specified in the `ODPIConnCreateParams` structure and must not be
+    /// NULL.
     pub value: *const c_char,
-    /// Specifies the length of the dpiAppContext.value member, in bytes.
+    /// Specifies the length of the `value` member, in bytes.
     pub value_length: u32,
 }
 
@@ -72,7 +73,7 @@ impl From<ODPIBytes> for String {
 pub struct ODPICommonCreateParams {
     /// Specifies the mode used for creating connections. It is expected to be one or more of the
     /// values from the enumeration `ODPICreateMode`, OR'ed together. The default value is
-    /// DPI_MODE_CREATE_DEFAULT.
+    /// `DPI_MODE_CREATE_DEFAULT`.
     pub create_mode: flags::ODPICreateMode,
     /// Specifies the encoding to use for CHAR data, as a null-terminated ASCII string. Either an
     /// IANA or Oracle specific character set name is expected. NULL is also acceptable which
@@ -84,17 +85,14 @@ pub struct ODPICommonCreateParams {
     pub nchar_encoding: *const c_char,
     /// Specifies the edition to be used when creating a standalone connection. It is expected to
     /// be NULL (meaning that no edition is set) or a byte string in the encoding specified by the
-    /// dpiCommonCreateParams.encoding member. The default value is NULL.
+    /// `encoding` member. The default value is NULL.
     pub edition: *const c_char,
-    /// Specifies the length of the dpiCommonCreateParams.edition member, in bytes. The default
-    /// value is 0.
+    /// Specifies the length of the `edition` member, in bytes. The default value is 0.
     pub edition_length: u32,
     /// Specifies the name of the driver that is being used. It is expected to be NULL or a byte
-    /// string in the encoding specified by the dpiCommonCreateParams.encoding member. The default
-    /// value is NULL.
+    /// string in the encoding specified by the `encoding` member. The default value is NULL.
     pub driver_name: *const c_char,
-    /// Specifies the length of the dpiCommonCreateParams.driverName member, in bytes. The default
-    /// value is 0.
+    /// Specifies the length of the `driverName` member, in bytes. The default value is 0.
     pub driver_name_length: u32,
 }
 
@@ -121,19 +119,18 @@ impl Default for ODPICommonCreateParams {
 pub struct ODPIConnCreateParams {
     /// Specifies the mode used for authorizing connections. It is expected to be one or more of the
     /// values from the enumeration `ODPIAuthMode`, OR'ed together. The default value is
-    /// DPI_MODE_AUTH_DEFAULT.
+    /// `DPI_MODE_AUTH_DEFAULT`.
     pub auth_mode: flags::ODPIAuthMode,
     /// Specifies the connection class to use when connecting to the database. This is used with
     /// DRCP (database resident connection pooling) or to further subdivide a session pool. It is
     /// expected to be NULL (meaning that no connection class will be set) or a byte string in the
     /// encoding used for CHAR data. The default value is NULL.
     pub connection_class: *const c_char,
-    /// Specifies the length of the dpiConnCreateParams.connectionClass member, in bytes. The
-    /// default value is 0.
+    /// Specifies the length of the `connection_class` member, in bytes. The default value is 0.
     pub connection_class_length: u32,
     /// Specifies the level of purity required when creating a connection using a connection class.
     /// It is expected to be one of the values from the enumeration `ODPIPurity`. The default value
-    /// is DPI_PURITY_DEFAULT.
+    /// is `ODPI_PURITY_DEFAULT`.
     pub purity: enums::ODPIPurity,
     /// Specifies the new password to set when creating a connection. This value is only used when
     /// creating a standalone connection. It is expected to be NULL or a byte string in the encoding
@@ -141,21 +138,19 @@ pub struct ODPIConnCreateParams {
     /// for the user is changed when the connection is created (useful when the password has expired
     /// and a session cannot be established without changing the password).
     pub new_password: *const c_char,
-    /// Specifies the length of the dpiConnCreateParams.newPassword member, in bytes. The default
-    /// value is 0.
+    /// Specifies the length of the `new_password` member, in bytes. The default value is 0.
     pub new_password_length: u32,
     /// Specifies the application context that will be set when the connection is created. This
     /// value is only used when creating standalone connections. It is expected to be NULL or an
     /// array of `ODPIAppContext` structures. The context specified here can be used in logon
     /// triggers, for example. The default value is NULL.
     pub app_context: *mut ODPIAppContext,
-    /// Specifies the number of elements found in the dpiConnCreateParams.appContext member. The
-    /// default value is 0.
+    /// Specifies the number of elements found in the `app_context` member. The default value is 0.
     pub num_app_context: u32,
     /// Specifies whether external authentication should be used to create the connection. If this
     /// value is 0, the user name and password values must be specified in the call to
-    /// `dpiConn_create()`; otherwise, the user name and password values must be zero length or NULL
-    /// The default value is 0.
+    /// `Connection::create()`; otherwise, the user name and password values must be zero length or
+    /// NULL. The default value is 0.
     pub external_auth: c_int,
     /// Specifies an OCI service context handle created externally that will be used instead of
     /// creating a connection. The default value is NULL.
@@ -166,30 +161,28 @@ pub struct ODPIConnCreateParams {
     /// Specifies the tag to use when acquiring a connection from a session pool. This member is
     /// ignored when creating a standalone connection. If specified, the tag restricts the type of
     /// session that can be returned to those with that tag or a NULL tag. If the member
-    /// `dpiConnCreateParams.matchAnyTag` is set, however, any session can be returned if no
-    /// matching sessions are found.
+    /// `match_any_tag` is set, however, any session can be returned if no matching sessions are
+    /// found.
     ///
     /// The value is expected to be NULL (any session can be returned) or a byte string in the
     /// encoding used for CHAR data. The default value is NULL.
     pub tag: *const c_char,
-    /// Specifies the length of the dpiConnCreateParams.tag member, in bytes. The default value is
-    /// 0.
+    /// Specifies the length of the `tag` member, in bytes. The default value is 0.
     pub tag_length: u32,
     /// Specifies whether any tagged session should be accepted when acquiring a connection from a
-    /// session pool, if no connection using the tag specified in the dpiConnCreateParams.tag is
-    /// available. This value is only used when acquiring a connection from a session pool. The
-    /// default value is 0.
+    /// session pool, if no connection using the tag specified in the `tag` is available. This value
+    /// is only used when acquiring a connection from a session pool. The default value is 0.
     pub match_any_tag: c_int,
     /// Specifies the tag of the connection that was acquired from a session pool, or NULL if the
     /// session was not tagged. This member is left untouched when creating a standalone connection
     /// and is filled in only if the connection acquired from the session pool was tagged. If filled
     /// in, it is a byte string in the encoding used for CHAR data.
     pub out_tag: *const c_char,
-    /// Specifies the length of the dpiConnCreateParams.outTag member, in bytes.
+    /// Specifies the length of the `out_tag` member, in bytes.
     pub out_tag_length: u32,
-    /// Specifies if the connection created used the tag specified by the dpiConnCreateParams.tag
-    /// member. It is only filled in if the connection was acquired from a session pool and a tag
-    /// was initially specified.
+    /// Specifies if the connection created used the tag specified by the `tag` member. It is only
+    /// filled in if the connection was acquired from a session pool and a tag was initially
+    /// specified.
     pub out_tag_found: c_int,
 }
 
@@ -230,50 +223,51 @@ pub struct ODPIData {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[cfg_attr(rustfmt, rustfmt_skip)]
 /// Struct represention C union type for `ODPIData`.
 pub union ODPIDataValueUnion {
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_BOOLEAN. The value should be either 1 (true) or 0 (false).
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Boolean`. The value should be either 1 (true) or 0 (false).
     pub as_boolean: ::std::os::raw::c_int,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_INT64.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Int64`.
     pub as_int_64: i64,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_UINT64.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Uint64`.
     pub as_uint_64: u64,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_FLOAT.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Float`.
     pub as_float: f32,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_DOUBLE.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Double`.
     pub as_double: f64,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_BYTES. This is a structure of type dpiBytes.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Bytes`. This is a structure of type `ODPIBytes`.
     pub as_bytes: ODPIBytes,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_TIMESTAMP. This is a structure of type dpiTimestamp.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Timestamp`. This is a structure of type `ODPITimestamp`.
     pub as_timestamp: ODPITimestamp,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_INTERVAL_DS. This is a structure of type dpiIntervalDS.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::IntervalDS`. This is a structure of type `ODPIIntervalDS`.
     pub as_interval_ds: ODPIIntervalDS,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_INTERVAL_YM. This is a structure of type dpiIntervalYM.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::IntervalYM`. This is a structure of type `ODPIIntervalYM`.
     pub as_interval_ym: ODPIIntervalYM,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_LOB. This is a reference to a LOB (large object) which can be used for
-/// reading and writing the data that belongs to it.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Lob`. This is a reference to a LOB (large object) which can be used for
+    /// reading and writing the data that belongs to it.
     pub as_lob: *mut opaque::ODPILob,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_OBJECT. This is a reference to an object which can be used for reading and
-/// writing its attributes or element values.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Object`. This is a reference to an object which can be used for reading
+    /// and writing its attributes or element values.
     pub as_object: *mut opaque::ODPIObject,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_STMT. This is a reference to a statement which can be used to query data
-/// from the database.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Stmt`. This is a reference to a statement which can be used to query
+    /// data from the database.
     pub as_stmt: *mut opaque::ODPIStmt,
-/// Value that is used when dpiData.isNull is 0 and the native type that is being used is
-/// DPI_NATIVE_TYPE_ROWID. This is a reference to a rowid which is used to uniquely identify a
-/// row in a table in the database.
+    /// Value that is used when `ODPIData.is_null` is 0 and the native type that is being used is
+    /// `ODPINativeTypeNum::Rowid`. This is a reference to a rowid which is used to uniquely
+    /// identify a row in a table in the database.
     pub as_rowid: *mut opaque::ODPIRowid,
 }
 
@@ -319,10 +313,9 @@ pub struct ODPIErrorInfo {
     /// The parse error offset (in bytes) when executing a statement or the row offset when fetching
     /// batch error information. If neither of these cases are true, the value is 0.
     pub offset: u16,
-    /// The error message as a byte string in the encoding specified by the dpiErrorInfo.encoding
-    /// member.
+    /// The error message as a byte string in the encoding specified by the `encoding` member.
     pub message: *const c_char,
-    /// The length of the dpiErrorInfo.message member, in bytes.
+    /// The length of the `message` member, in bytes.
     pub message_length: u32,
     /// The encoding in which the error message is encoded as a null-terminated string. For OCI
     /// errors this is the CHAR encoding used when the connection was created. For ODPI-C specific
@@ -383,6 +376,26 @@ pub struct ODPIIntervalYM {
     pub years: i32,
     /// Specifies the number of months in the interval.
     pub months: i32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+/// This structure is used for passing information about an object type from ODPI-C. It is used by
+/// the function `ObjectAttr::get_info()`.
+pub struct ODPIObjectAttrInfo {
+    /// Specifies the name of the attribute, as a byte string in the encoding used for CHAR data.
+    pub name: *const ::std::os::raw::c_char,
+    /// Specifies the length of the `name` member, in bytes.
+    pub name_length: u32,
+    /// Specifices the Oracle type of the attribute. It will be one of the values from the
+    /// enumeration `ODPIOracleTypeNum`.
+    pub oracle_type_num: enums::ODPIOracleTypeNum,
+    /// Specifices the default native type of the attribute. It will be one of the values from the
+    /// enumeration `ODPINativeTypeNum`.
+    pub default_native_type_num: enums::ODPINativeTypeNum,
+    /// Specifies a reference to the object type of the attribute, if the attribute refers to a
+    /// named type; otherwise it is NULL.
+    pub object_ype: *mut opaque::ODPIObjectType,
 }
 
 #[repr(C)]

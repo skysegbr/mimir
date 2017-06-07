@@ -11,6 +11,7 @@ use common::error::Info;
 
 error_chain! {
     foreign_links {
+        Io(::std::io::Error);
         Nul(::std::ffi::NulError);
         EnvVar(::std::env::VarError);
     }
