@@ -8,7 +8,7 @@
 
 //! ODPI-C Public Structs.
 use chrono::{DateTime, TimeZone, UTC};
-use odpi::{externs, flags, opaque};
+use odpi::{enums, externs, flags, opaque};
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use util::ODPIStr;
@@ -134,7 +134,7 @@ pub struct ODPIConnCreateParams {
     /// Specifies the level of purity required when creating a connection using a connection class.
     /// It is expected to be one of the values from the enumeration `ODPIPurity`. The default value
     /// is DPI_PURITY_DEFAULT.
-    pub purity: flags::ODPIPurity,
+    pub purity: enums::ODPIPurity,
     /// Specifies the new password to set when creating a connection. This value is only used when
     /// creating a standalone connection. It is expected to be NULL or a byte string in the encoding
     /// used for CHAR data. The default value of this member is NULL. If specified, the password
@@ -199,7 +199,7 @@ impl Default for ODPIConnCreateParams {
             auth_mode: flags::DPI_MODE_AUTH_DEFAULT,
             connection_class: ptr::null(),
             connection_class_length: 0,
-            purity: flags::DPI_PURITY_DEFAULT,
+            purity: enums::ODPIPurity::DefaultPurity,
             new_password: ptr::null(),
             new_password_length: 0,
             app_context: ptr::null_mut(),
@@ -425,7 +425,7 @@ pub struct ODPIPoolCreateParams {
     /// Specifies the mode to use when sessions are acquired from the pool. It is expected to be one
     /// of the values from the enumeration `ODPIGetPoolMode`. The default value is
     /// DPI_MODE_POOL_GET_NOWAIT
-    pub get_mode: flags::ODPIPoolGetMode,
+    pub get_mode: enums::ODPIPoolGetMode,
     /// This member is populated upon successful creation of a pool using the function
     /// dpiPool_create(). It is a byte string in the encoding used for CHAR data. Any value
     /// specified prior to creating the session pool is ignored.
@@ -446,7 +446,7 @@ impl Default for ODPIPoolCreateParams {
             ping_timeout: 5000,
             homogeneous: 0,
             external_auth: 0,
-            get_mode: flags::ODPIPoolGetMode::NoWait,
+            get_mode: enums::ODPIPoolGetMode::NoWait,
             out_pool_name: ptr::null(),
             out_pool_name_length: 0,
         }
@@ -466,10 +466,10 @@ pub struct ODPIQueryInfo {
     pub name_length: u32,
     /// Specifies the type of the column that is being queried. It will be one of the values from
     /// the enumeration `ODPIOracleTypeNum`.
-    pub oracle_type_num: flags::ODPIOracleTypeNum,
+    pub oracle_type_num: enums::ODPIOracleTypeNum,
     /// Specifies the default native type for the column that is being queried. It will be one of
     /// the values from the enumeration `ODPINativeTypeNum`.
-    pub default_native_type_num: flags::ODPINativeTypeNum,
+    pub default_native_type_num: enums::ODPINativeTypeNum,
     /// Specifies the size in bytes (from the database's perspective) of the column that is being
     /// queried. This value is only populated for strings and binary columns. For all other columns
     /// the value is zero.
@@ -500,8 +500,8 @@ impl Default for ODPIQueryInfo {
         ODPIQueryInfo {
             name: ptr::null(),
             name_length: 0,
-            oracle_type_num: flags::ODPIOracleTypeNum::TypeNone,
-            default_native_type_num: flags::ODPINativeTypeNum::Invalid,
+            oracle_type_num: enums::ODPIOracleTypeNum::TypeNone,
+            default_native_type_num: enums::ODPINativeTypeNum::Invalid,
             db_size_in_bytes: 0,
             client_size_in_bytes: 0,
             size_in_chars: 0,
@@ -532,7 +532,7 @@ pub struct ODPIStmtInfo {
     /// `ODPIStmtInfo.isPLSQL`, `ODPIStmtInfo.isDDL` and `ODPIStmtInfo.isDML` are all
     /// categorizations of this value. It will be one of the values from the enumeration
     /// `ODPIStatementType`.
-    pub statement_type: flags::ODPIStatementType,
+    pub statement_type: enums::ODPIStatementType,
     /// Specifies if the statement has a returning clause in it (1) or not (0).
     pub is_returning: ::std::os::raw::c_int,
 }
@@ -544,7 +544,7 @@ impl Default for ODPIStmtInfo {
             is_plsql: 0,
             is_ddl: 0,
             is_dml: 0,
-            statement_type: flags::ODPIStatementType::NotSet,
+            statement_type: enums::ODPIStatementType::NotSet,
             is_returning: 0,
         }
     }
@@ -558,11 +558,11 @@ pub struct ODPISubscrCreateParams {
     /// Specifies the namespace in which the subscription is created. It is expected to be one of
     /// the values from the enumeration `ODPISubscrNamespace`. The default value is
     /// DPI_SUBSCR_NAMESPACE_DBCHANGE.
-    pub subscr_namespace: flags::ODPISubscrNamespace,
+    pub subscr_namespace: enums::ODPISubscrNamespace,
     /// Specifies the protocol used for sending notifications for the subscription. It is expected
     /// to be one of the values from the enumeration `ODPISubscrProtocol`. The default value is
     /// DPI_SUBSCR_PROTO_CALLBACK.
-    pub protocol: flags::ODPISubscrProtocol,
+    pub protocol: enums::ODPISubscrProtocol,
     /// Specifies the quality of service flags to use with the subscription. It is expected to be
     /// one or more of the values from the enumeration `ODPISubscrQOS`, OR'ed together. The default
     /// value is to have no flags set.
@@ -613,8 +613,8 @@ pub struct ODPISubscrCreateParams {
 impl Default for ODPISubscrCreateParams {
     fn default() -> ODPISubscrCreateParams {
         ODPISubscrCreateParams {
-            subscr_namespace: flags::ODPISubscrNamespace::DbChange,
-            protocol: flags::ODPISubscrProtocol::Callback,
+            subscr_namespace: enums::ODPISubscrNamespace::DbChange,
+            protocol: enums::ODPISubscrProtocol::Callback,
             qos: flags::DPI_SUBSCR_QOS_NONE,
             operations: flags::DPI_OPCODE_ALL_OPS,
             port_number: 0,
@@ -636,7 +636,7 @@ impl Default for ODPISubscrCreateParams {
 pub struct ODPISubscrMessage {
     /// Specifies the type of event that took place which generated the notification. It will be one
     /// of the values from the enumeration `ODPIEventType`.
-    pub event_type: flags::ODPIEventType,
+    pub event_type: enums::ODPIEventType,
     /// Specifies the name of the database which generated the notification, as a byte string in the
     /// encoding used for CHAR data.
     pub db_name: *const c_char,

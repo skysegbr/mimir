@@ -11,7 +11,7 @@
 //! are destroyed by releasing the last reference by calling the function
 //! `enqueue::Options::release()`.
 use error::{ErrorKind, Result};
-use odpi::{externs, flags};
+use odpi::{enums, externs};
 use odpi::opaque::ODPIEnqOptions;
 use std::ptr;
 use util::ODPIStr;
@@ -59,8 +59,8 @@ impl Options {
 
     /// Returns whether the message being enqueued is part of the current transaction or constitutes
     /// a transaction on its own.
-    pub fn get_visibility(&self) -> Result<flags::ODPIVisibility> {
-        let mut enq_vis_ptr = flags::ODPIVisibility::Immediate;
+    pub fn get_visibility(&self) -> Result<enums::ODPIVisibility> {
+        let mut enq_vis_ptr = enums::ODPIVisibility::Immediate;
 
         try_dpi!(externs::dpiEnqOptions_getVisibility(self.inner, &mut enq_vis_ptr),
                  Ok(enq_vis_ptr),
@@ -77,7 +77,7 @@ impl Options {
     }
 
     /// Sets the message delivery mode that is to be used when enqueuing messages.
-    pub fn set_delivery_mode(&self, mode: flags::ODPIMessageDeliveryMode) -> Result<()> {
+    pub fn set_delivery_mode(&self, mode: enums::ODPIMessageDeliveryMode) -> Result<()> {
         try_dpi!(externs::dpiEnqOptions_setDeliveryMode(self.inner, mode),
                  Ok(()),
                  ErrorKind::EnqOptions("dpiEnqOptions_setDeliveryMode".to_string()))
@@ -96,7 +96,7 @@ impl Options {
 
     /// Sets whether the message being enqueued is part of the current transaction or constitutes a
     /// transaction on its own.
-    pub fn set_visibility(&self, visibility: flags::ODPIVisibility) -> Result<()> {
+    pub fn set_visibility(&self, visibility: enums::ODPIVisibility) -> Result<()> {
         try_dpi!(externs::dpiEnqOptions_setVisibility(self.inner, visibility),
                  Ok(()),
                  ErrorKind::EnqOptions("dpiEnqOptions_setVisibility".to_string()))
@@ -114,9 +114,9 @@ mod test {
     use connection::Connection;
     use context::Context;
     use error::Result;
-    use odpi::flags::ODPIConnCloseMode::*;
-    use odpi::flags::ODPIMessageDeliveryMode::*;
-    use odpi::flags::ODPIVisibility::*;
+    use odpi::flags;
+    use odpi::enums::ODPIMessageDeliveryMode::*;
+    use odpi::enums::ODPIVisibility::*;
     use std::ffi::CString;
     use test::CREDS;
 
@@ -156,7 +156,7 @@ mod test {
         enqueue_opts.release()?;
 
         conn.release()?;
-        conn.close(DefaultClose, None)?;
+        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
 
         Ok(())
     }

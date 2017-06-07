@@ -6,11 +6,13 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-//! [NOT IMPL]
-//! Message Properties
+//! Message properties handles are used to represent the properties of messages that are enqueued
+//! and dequeued using advanced queuing. They are created by calling the function
+//! `Connection::new_msg_props()` and are destroyed by releasing the last reference by calling the
+//! function `Properties::release()`.
 use chrono::{DateTime, UTC};
 use error::{ErrorKind, Result};
-use odpi::{externs, flags};
+use odpi::{enums, externs};
 use odpi::opaque::ODPIMsgProps;
 use odpi::structs::ODPITimestamp;
 use std::ptr;
@@ -74,8 +76,8 @@ impl Properties {
     }
 
     /// Returns the mode that was used to deliver the message.
-    pub fn get_delivery_mode(&self) -> Result<flags::ODPIMessageDeliveryMode> {
-        let mut del_mode_ptr = flags::ODPIMessageDeliveryMode::NotSet;
+    pub fn get_delivery_mode(&self) -> Result<enums::ODPIMessageDeliveryMode> {
+        let mut del_mode_ptr = enums::ODPIMessageDeliveryMode::NotSet;
 
         try_dpi!(externs::dpiMsgProps_getDeliveryMode(self.inner, &mut del_mode_ptr),
                  Ok(del_mode_ptr.into()),
@@ -145,8 +147,8 @@ impl Properties {
     }
 
     /// Returns the state of the message at the time of dequeue.
-    pub fn get_state(&self) -> Result<flags::ODPIMessageState> {
-        let mut state = flags::ODPIMessageState::Ready;
+    pub fn get_state(&self) -> Result<enums::ODPIMessageState> {
+        let mut state = enums::ODPIMessageState::Ready;
 
         try_dpi!(externs::dpiMsgProps_getState(self.inner, &mut state),
                  Ok(state),
@@ -239,9 +241,9 @@ mod test {
     use connection::Connection;
     use context::Context;
     use error::Result;
-    use odpi::flags::ODPIConnCloseMode::*;
-    use odpi::flags::ODPIMessageDeliveryMode::*;
-    use odpi::flags::ODPIMessageState::*;
+    use odpi::flags;
+    use odpi::enums::ODPIMessageDeliveryMode::*;
+    use odpi::enums::ODPIMessageState::*;
     use std::ffi::CString;
     use test::CREDS;
 
@@ -318,7 +320,7 @@ mod test {
         msg_props.release()?;
 
         conn.release()?;
-        conn.close(DefaultClose, None)?;
+        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
 
         Ok(())
     }

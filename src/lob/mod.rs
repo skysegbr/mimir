@@ -242,8 +242,8 @@ mod test {
     use connection::Connection;
     use context::Context;
     use error::Result;
-    use odpi::flags::ODPIConnCloseMode::*;
-    use odpi::flags::ODPIOracleTypeNum::*;
+    use odpi::enums::ODPIOracleTypeNum::*;
+    use odpi::flags;
     use std::ffi::CString;
     use test::CREDS;
 
@@ -284,7 +284,7 @@ mod test {
         temp_lob.release()?;
 
         conn.release()?;
-        conn.close(DefaultClose, None)?;
+        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
 
         Ok(())
     }

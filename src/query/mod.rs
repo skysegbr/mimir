@@ -9,7 +9,7 @@
 //! [NOT IMPL]
 //! This structure is used for passing query metadata from ODPI-C.
 use objecttype::ObjectType;
-use odpi::flags;
+use odpi::enums;
 use odpi::structs::ODPIQueryInfo;
 use util::ODPIStr;
 
@@ -40,7 +40,7 @@ impl Info {
     ///
     /// Specifies the type of the column that is being queried. It will be one of the values from
     /// the enumeration `ODPIOracleTypeNum`.
-    pub fn oracle_type_num(&self) -> flags::ODPIOracleTypeNum {
+    pub fn oracle_type_num(&self) -> enums::ODPIOracleTypeNum {
         self.inner.oracle_type_num
     }
 
@@ -48,7 +48,7 @@ impl Info {
     ///
     /// Specifies the default native type for the column that is being queried. It will be one of
     /// the values from the enumeration `ODPINativeTypeNum`.
-    pub fn default_native_type_num(&self) -> flags::ODPINativeTypeNum {
+    pub fn default_native_type_num(&self) -> enums::ODPINativeTypeNum {
         self.inner.default_native_type_num
     }
 

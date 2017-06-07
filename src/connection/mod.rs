@@ -21,7 +21,7 @@ use lob::Lob;
 use message::Properties;
 use object::Object;
 use objecttype::ObjectType;
-use odpi::{externs, flags};
+use odpi::{enums, externs, flags};
 use odpi::opaque::ODPIConn;
 use odpi::structs::{ODPIEncodingInfo, ODPIVersionInfo};
 use slog::Logger;
@@ -431,13 +431,13 @@ impl Connection {
     ///
     /// * `lob_type` - the type of LOB which should be created. It should be one of these values
     /// from the enumeration `ODPIOracleTypeNum`: `Clob`, `NClob` or `Blob`.
-    pub fn new_temp_lob(&self, lob_type: flags::ODPIOracleTypeNum) -> Result<Lob> {
+    pub fn new_temp_lob(&self, lob_type: enums::ODPIOracleTypeNum) -> Result<Lob> {
         let mut lob_ptr = ptr::null_mut();
 
         match lob_type {
-            flags::ODPIOracleTypeNum::Clob |
-            flags::ODPIOracleTypeNum::NClob |
-            flags::ODPIOracleTypeNum::Blob => {}
+            enums::ODPIOracleTypeNum::Clob |
+            enums::ODPIOracleTypeNum::NClob |
+            enums::ODPIOracleTypeNum::Blob => {}
             _ => return Err(ErrorKind::Connection("invalid oracle type".to_string()).into()),
         }
 
@@ -466,8 +466,8 @@ impl Connection {
     /// * `is_array` - boolean value indicating if the variable refers to a PL/SQL array or simply
     /// to buffers used for binding or fetching data.
     pub fn new_var(&self,
-                   oracle_type_num: flags::ODPIOracleTypeNum,
-                   native_type_num: flags::ODPINativeTypeNum,
+                   oracle_type_num: enums::ODPIOracleTypeNum,
+                   native_type_num: enums::ODPINativeTypeNum,
                    max_array_size: u32,
                    size: u32,
                    size_is_bytes: bool,
@@ -692,7 +692,7 @@ impl Connection {
     /// the orderly shutdown of the database.
     ///
     /// * `mode` - one of the values from the enumeration `ODPIShutdownMode`.
-    pub fn shutdown_database(self, mode: flags::ODPIShutdownMode) -> Result<()> {
+    pub fn shutdown_database(self, mode: enums::ODPIShutdownMode) -> Result<()> {
         try_dpi!(externs::dpiConn_shutdownDatabase(self.inner, mode),
                  Ok(()),
                  ErrorKind::Connection("dpiConn_shutdownDatabase".to_string()))
@@ -701,7 +701,7 @@ impl Connection {
     /// Starts up a database
     ///
     /// * `mode` - one of the values from the enumeration `ODPIStartupMode`.
-    pub fn start_database(self, mode: flags::ODPIStartupMode) -> Result<()> {
+    pub fn start_database(self, mode: enums::ODPIStartupMode) -> Result<()> {
         try_dpi!(externs::dpiConn_startupDatabase(self.inner, mode),
                  Ok(()),
                  ErrorKind::Connection("dpiConn_startupDatabase".to_string()))
@@ -724,11 +724,11 @@ mod test {
     use connection::Connection;
     use context::Context;
     use error;
-    use odpi::flags::ODPIDeqMode::*;
-    use odpi::flags::ODPIVisibility::*;
-    use odpi::flags::ODPIMessageDeliveryMode::*;
-    use odpi::flags::ODPINativeTypeNum::*;
-    use odpi::flags::ODPIOracleTypeNum::*;
+    use odpi::enums::ODPIDeqMode::*;
+    use odpi::enums::ODPIMessageDeliveryMode::*;
+    use odpi::enums::ODPINativeTypeNum::*;
+    use odpi::enums::ODPIOracleTypeNum::*;
+    use odpi::enums::ODPIVisibility::*;
     use odpi::structs::ODPISubscrMessage;
     use rand::{self, Rng};
 

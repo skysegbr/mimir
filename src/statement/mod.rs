@@ -15,8 +15,8 @@
 use common::error;
 use data::Data;
 use error::{ErrorKind, Result};
-use odpi::externs;
-use odpi::flags::{ODPIExecMode, ODPIFetchMode, ODPINativeTypeNum, ODPIStatementType};
+use odpi::{enums, externs};
+use odpi::flags::ODPIExecMode;
 use odpi::opaque::ODPIStmt;
 use odpi::structs::{ODPIData, ODPIQueryInfo, ODPIStmtInfo};
 use query;
@@ -96,7 +96,7 @@ impl Statement {
     /// retained. Once the statement has been executed, this new variable will be released.
     pub fn bind_value_by_name(&self,
                               name: &str,
-                              native_type: ODPINativeTypeNum,
+                              native_type: enums::ODPINativeTypeNum,
                               data: Data)
                               -> Result<()> {
         let name_s = ODPIStr::from(name);
@@ -124,7 +124,7 @@ impl Statement {
     /// retained. Once the statement has been executed, this new variable will be released.
     pub fn bind_value_by_pos(&self,
                              pos: u32,
-                             native_type: ODPINativeTypeNum,
+                             native_type: enums::ODPINativeTypeNum,
                              data: Data)
                              -> Result<()> {
         try_dpi!(externs::dpiStmt_bindValueByPos(self.inner, pos, native_type, data.data()),
@@ -325,7 +325,7 @@ impl Statement {
 
     /// Returns the value of the column at the given position for the currently fetched row, without
     /// needing to provide a variable.
-    pub fn get_query_value(&self, pos: u32) -> Result<(ODPINativeTypeNum, *mut ODPIData)> {
+    pub fn get_query_value(&self, pos: u32) -> Result<(enums::ODPINativeTypeNum, *mut ODPIData)> {
         let mut data = ptr::null_mut();
         let mut native_type = 0;
 
@@ -373,7 +373,11 @@ impl Statement {
     /// * `offset` - a value which is used with the mode in order to determine the row position in
     /// the cursor.
     /// * `row_count_offset` -
-    pub fn scroll(&self, mode: ODPIFetchMode, offset: i32, row_count_offset: i32) -> Result<()> {
+    pub fn scroll(&self,
+                  mode: enums::ODPIFetchMode,
+                  offset: i32,
+                  row_count_offset: i32)
+                  -> Result<()> {
         try_dpi!(externs::dpiStmt_scroll(self.inner, mode, offset, row_count_offset),
                  Ok(()),
                  ErrorKind::Statement("dpiStmt_scroll".to_string()))
@@ -429,7 +433,7 @@ impl Info {
     /// Specifies the type of statement that has been prepared. The is_query, is_plsql, is_ddl and
     /// is_dml are all categorizations of this value. It will be one of the values from the
     /// enumeration `ODPIStatementType`.
-    pub fn statement_type(&self) -> ODPIStatementType {
+    pub fn statement_type(&self) -> enums::ODPIStatementType {
         self.inner.statement_type
     }
 
@@ -445,10 +449,10 @@ mod test {
     use data::Data;
     use error;
     use odpi::flags;
-    use odpi::flags::ODPIFetchMode::*;
-    use odpi::flags::ODPINativeTypeNum::*;
-    use odpi::flags::ODPIOracleTypeNum::*;
-    use odpi::flags::ODPIStatementType::*;
+    use odpi::enums::ODPIFetchMode::*;
+    use odpi::enums::ODPINativeTypeNum::*;
+    use odpi::enums::ODPIOracleTypeNum::*;
+    use odpi::enums::ODPIStatementType::*;
     use odpi::structs::{ODPIBytes, ODPIDataValueUnion};
     use rand::{self, Rng};
     use test::{ContextResult, CREDS, CTXT, ENC};

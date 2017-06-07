@@ -15,7 +15,7 @@ use connection::Connection;
 use context::Context;
 use context::params::{CommonCreate, ConnCreate, PoolCreate};
 use error::{ErrorKind, Result};
-use odpi::{externs, flags};
+use odpi::{enums, externs, flags};
 use odpi::opaque::{ODPIConn, ODPIPool};
 use odpi::structs::ODPIEncodingInfo;
 use std::ptr;
@@ -169,8 +169,8 @@ impl Pool {
     }
 
     /// Returns the mode used for acquiring or getting connections from the pool.
-    pub fn get_get_mode(&self) -> Result<flags::ODPIPoolGetMode> {
-        let mut get_mode = flags::ODPIPoolGetMode::NoWait;
+    pub fn get_get_mode(&self) -> Result<enums::ODPIPoolGetMode> {
+        let mut get_mode = enums::ODPIPoolGetMode::NoWait;
 
         try_dpi!(externs::dpiPool_getGetMode(self.inner, &mut get_mode),
                  Ok(get_mode),
@@ -229,7 +229,7 @@ impl Pool {
     /// Sets the mode used for acquiring or getting connections from the pool.
     ///
     /// * `get_mode` - A value from the `ODPIGetMode` enumeration.
-    pub fn set_get_mode(&self, get_mode: flags::ODPIPoolGetMode) -> Result<()> {
+    pub fn set_get_mode(&self, get_mode: enums::ODPIPoolGetMode) -> Result<()> {
         try_dpi!(externs::dpiPool_setGetMode(self.inner, get_mode),
                  Ok(()),
                  ErrorKind::Pool("dpiPool_setGetMode".to_string()))
@@ -276,8 +276,9 @@ mod test {
     use context::Context;
     use data::Data;
     use error::Result;
-    use odpi::flags::{self, ODPIConnCloseMode, ODPIPoolCloseMode};
-    use odpi::flags::ODPINativeTypeNum::*;
+    use odpi::enums;
+    use odpi::enums::ODPINativeTypeNum::*;
+    use odpi::flags;
     use pool::Pool;
     use std::ffi::CString;
 
@@ -304,10 +305,10 @@ mod test {
         assert_eq!(ei.max_bytes_per_nchar(), 4);
 
         let mut get_mode = pool.get_get_mode()?;
-        assert_eq!(get_mode, flags::ODPIPoolGetMode::NoWait);
-        pool.set_get_mode(flags::ODPIPoolGetMode::ForceGet)?;
+        assert_eq!(get_mode, enums::ODPIPoolGetMode::NoWait);
+        pool.set_get_mode(enums::ODPIPoolGetMode::ForceGet)?;
         get_mode = pool.get_get_mode()?;
-        assert_eq!(get_mode, flags::ODPIPoolGetMode::ForceGet);
+        assert_eq!(get_mode, enums::ODPIPoolGetMode::ForceGet);
 
         let mut max_lifetime_session = pool.get_max_lifetime_session()?;
         assert_eq!(max_lifetime_session, 0);
@@ -361,9 +362,9 @@ mod test {
         assert_eq!(open_count, 1);
 
         conn.release()?;
-        conn.close(ODPIConnCloseMode::DefaultClose, None)?;
+        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
         pool.release()?;
-        pool.close(ODPIPoolCloseMode::DefaultClose)?;
+        pool.close(flags::DPI_MODE_POOL_CLOSE_DEFAULT)?;
 
         Ok(())
     }

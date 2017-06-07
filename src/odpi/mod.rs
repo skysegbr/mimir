@@ -8,6 +8,7 @@
 
 //! `oic` ODPI-C wrappers.
 pub mod constants;
+pub mod enums;
 pub mod externs;
 pub mod flags;
 pub mod opaque;

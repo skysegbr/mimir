@@ -8,7 +8,7 @@
 
 //! These structs are used for initializing parameters used during connection creation, pool
 //! creation, or subscription creation.
-use odpi::{externs, flags};
+use odpi::{enums, externs, flags};
 use odpi::structs::{ODPIAppContext, ODPICommonCreateParams, ODPIConnCreateParams,
                     ODPIPoolCreateParams, ODPISubscrCreateParams};
 use pool::Pool;
@@ -248,12 +248,12 @@ impl ConnCreate {
     /// Specifies the level of purity required when creating a connection using a connection class.
     /// It is expected to be one of the values from the enumeration `ODPIPurity`. The default value
     /// is DPI_PURITY_DEFAULT.
-    pub fn get_purity(&self) -> flags::ODPIPurity {
+    pub fn get_purity(&self) -> enums::ODPIPurity {
         self.conn.purity
     }
 
     /// Set the `purity` value.
-    pub fn set_purity(&mut self, purity: flags::ODPIPurity) -> &mut ConnCreate {
+    pub fn set_purity(&mut self, purity: enums::ODPIPurity) -> &mut ConnCreate {
         self.conn.purity = purity;
         self
     }
@@ -556,12 +556,12 @@ impl PoolCreate {
     /// Specifies the mode to use when sessions are acquired from the pool. It is expected to be one
     /// of the values from the enumeration `ODPIPoolGetMode`. The default value is
     /// DPI_MODE_POOL_GET_NOWAIT
-    pub fn get_get_mode(&self) -> flags::ODPIPoolGetMode {
+    pub fn get_get_mode(&self) -> enums::ODPIPoolGetMode {
         self.pool.get_mode
     }
 
     /// Set the `get_mode` value.
-    pub fn set_get_mode(&mut self, get_mode: flags::ODPIPoolGetMode) -> &mut PoolCreate {
+    pub fn set_get_mode(&mut self, get_mode: enums::ODPIPoolGetMode) -> &mut PoolCreate {
         self.pool.get_mode = get_mode;
         self
     }
@@ -607,13 +607,13 @@ impl SubscrCreate {
     /// Specifies the namespace in which the subscription is created. It is expected to be one of
     /// the values from the enumeration `ODPISubscrNamespace`. The default value is
     /// DPI_SUBSCR_NAMESPACE_DBCHANGE.
-    pub fn get_subscr_namespace(&self) -> flags::ODPISubscrNamespace {
+    pub fn get_subscr_namespace(&self) -> enums::ODPISubscrNamespace {
         self.subscr.subscr_namespace
     }
 
     /// Set the `subscr_namespace` value.
     pub fn set_subscr_namespace(&mut self,
-                                subscr_namespace: flags::ODPISubscrNamespace)
+                                subscr_namespace: enums::ODPISubscrNamespace)
                                 -> &mut SubscrCreate {
         self.subscr.subscr_namespace = subscr_namespace;
         self
@@ -624,12 +624,12 @@ impl SubscrCreate {
     /// Specifies the protocol used for sending notifications for the subscription. It is expected
     /// to be one of the values from the enumeration `ODPISubscrProtocol`. The default value is
     /// DPI_SUBSCR_PROTO_CALLBACK.
-    pub fn get_protocol(&self) -> flags::ODPISubscrProtocol {
+    pub fn get_protocol(&self) -> enums::ODPISubscrProtocol {
         self.subscr.protocol
     }
 
     /// Set the `protocol` value.
-    pub fn set_protocol(&mut self, protocol: flags::ODPISubscrProtocol) -> &mut SubscrCreate {
+    pub fn set_protocol(&mut self, protocol: enums::ODPISubscrProtocol) -> &mut SubscrCreate {
         self.subscr.protocol = protocol;
         self
     }

@@ -7,7 +7,7 @@
 // modified, or distributed except according to those terms.
 
 //! ODPI-C externs
-use odpi::{flags, opaque, structs};
+use odpi::{enums, flags, opaque, structs};
 
 /// The optional function pointer used in the `ODPISubscrCreateParams` struct.
 pub type ODPISubscrCallback =
@@ -147,12 +147,12 @@ extern "C" {
                                    subscrId: *mut u32)
                                    -> ::std::os::raw::c_int;
     pub fn dpiConn_newTempLob(conn: *mut opaque::ODPIConn,
-                              lobType: flags::ODPIOracleTypeNum,
+                              lobType: enums::ODPIOracleTypeNum,
                               lob: *mut *mut opaque::ODPILob)
                               -> ::std::os::raw::c_int;
     pub fn dpiConn_newVar(conn: *mut opaque::ODPIConn,
-                          oracleTypeNum: flags::ODPIOracleTypeNum,
-                          nativeTypeNum: flags::ODPINativeTypeNum,
+                          oracleTypeNum: enums::ODPIOracleTypeNum,
+                          nativeTypeNum: enums::ODPINativeTypeNum,
                           maxArraySize: u32,
                           size: u32,
                           sizeIsBytes: ::std::os::raw::c_int,
@@ -211,10 +211,10 @@ extern "C" {
                                     cacheSize: u32)
                                     -> ::std::os::raw::c_int;
     pub fn dpiConn_shutdownDatabase(conn: *mut opaque::ODPIConn,
-                                    mode: flags::ODPIShutdownMode)
+                                    mode: enums::ODPIShutdownMode)
                                     -> ::std::os::raw::c_int;
     pub fn dpiConn_startupDatabase(conn: *mut opaque::ODPIConn,
-                                   mode: flags::ODPIStartupMode)
+                                   mode: enums::ODPIStartupMode)
                                    -> ::std::os::raw::c_int;
 }
 
@@ -233,21 +233,21 @@ extern "C" {
                                         valueLength: *mut u32)
                                         -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_getMode(options: *mut opaque::ODPIDeqOptions,
-                                 value: *mut flags::ODPIDeqMode)
+                                 value: *mut enums::ODPIDeqMode)
                                  -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_getMsgId(options: *mut opaque::ODPIDeqOptions,
                                   value: *mut *const ::std::os::raw::c_char,
                                   valueLength: *mut u32)
                                   -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_getNavigation(options: *mut opaque::ODPIDeqOptions,
-                                       value: *mut flags::ODPIDeqNavigation)
+                                       value: *mut enums::ODPIDeqNavigation)
                                        -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_getTransformation(options: *mut opaque::ODPIDeqOptions,
                                            value: *mut *const ::std::os::raw::c_char,
                                            valueLength: *mut u32)
                                            -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_getVisibility(options: *mut opaque::ODPIDeqOptions,
-                                       value: *mut flags::ODPIVisibility)
+                                       value: *mut enums::ODPIVisibility)
                                        -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_getWait(options: *mut opaque::ODPIDeqOptions,
                                  value: *mut u32)
@@ -266,21 +266,21 @@ extern "C" {
                                         valueLength: u32)
                                         -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_setMode(options: *mut opaque::ODPIDeqOptions,
-                                 value: flags::ODPIDeqMode)
+                                 value: enums::ODPIDeqMode)
                                  -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_setMsgId(options: *mut opaque::ODPIDeqOptions,
                                   value: *const ::std::os::raw::c_char,
                                   valueLength: u32)
                                   -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_setNavigation(options: *mut opaque::ODPIDeqOptions,
-                                       value: flags::ODPIDeqNavigation)
+                                       value: enums::ODPIDeqNavigation)
                                        -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_setTransformation(options: *mut opaque::ODPIDeqOptions,
                                            value: *const ::std::os::raw::c_char,
                                            valueLength: u32)
                                            -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_setVisibility(options: *mut opaque::ODPIDeqOptions,
-                                       value: flags::ODPIVisibility)
+                                       value: enums::ODPIVisibility)
                                        -> ::std::os::raw::c_int;
     pub fn dpiDeqOptions_setWait(options: *mut opaque::ODPIDeqOptions,
                                  value: u32)
@@ -294,18 +294,18 @@ extern "C" {
                                            valueLength: *mut u32)
                                            -> ::std::os::raw::c_int;
     pub fn dpiEnqOptions_getVisibility(options: *mut opaque::ODPIEnqOptions,
-                                       value: *mut flags::ODPIVisibility)
+                                       value: *mut enums::ODPIVisibility)
                                        -> ::std::os::raw::c_int;
     pub fn dpiEnqOptions_release(options: *mut opaque::ODPIEnqOptions) -> ::std::os::raw::c_int;
     pub fn dpiEnqOptions_setDeliveryMode(options: *mut opaque::ODPIEnqOptions,
-                                         value: flags::ODPIMessageDeliveryMode)
+                                         value: enums::ODPIMessageDeliveryMode)
                                          -> ::std::os::raw::c_int;
     pub fn dpiEnqOptions_setTransformation(options: *mut opaque::ODPIEnqOptions,
                                            value: *const ::std::os::raw::c_char,
                                            valueLength: u32)
                                            -> ::std::os::raw::c_int;
     pub fn dpiEnqOptions_setVisibility(options: *mut opaque::ODPIEnqOptions,
-                                       value: flags::ODPIVisibility)
+                                       value: enums::ODPIVisibility)
                                        -> ::std::os::raw::c_int;
 }
 
@@ -373,7 +373,7 @@ extern "C" {
                                 value: *mut i32)
                                 -> ::std::os::raw::c_int;
     pub fn dpiMsgProps_getDeliveryMode(props: *mut opaque::ODPIMsgProps,
-                                       value: *mut flags::ODPIMessageDeliveryMode)
+                                       value: *mut enums::ODPIMessageDeliveryMode)
                                        -> ::std::os::raw::c_int;
     pub fn dpiMsgProps_getEnqTime(props: *mut opaque::ODPIMsgProps,
                                   value: *mut structs::ODPITimestamp)
@@ -393,7 +393,7 @@ extern "C" {
                                    value: *mut i32)
                                    -> ::std::os::raw::c_int;
     pub fn dpiMsgProps_getState(props: *mut opaque::ODPIMsgProps,
-                                value: *mut flags::ODPIMessageState)
+                                value: *mut enums::ODPIMessageState)
                                 -> ::std::os::raw::c_int;
     pub fn dpiMsgProps_release(props: *mut opaque::ODPIMsgProps) -> ::std::os::raw::c_int;
     pub fn dpiMsgProps_setCorrelation(props: *mut opaque::ODPIMsgProps,
@@ -454,7 +454,7 @@ extern "C" {
                                    info: *mut structs::ODPIEncodingInfo)
                                    -> ::std::os::raw::c_int;
     pub fn dpiPool_getGetMode(pool: *mut opaque::ODPIPool,
-                              value: *mut flags::ODPIPoolGetMode)
+                              value: *mut enums::ODPIPoolGetMode)
                               -> ::std::os::raw::c_int;
     pub fn dpiPool_getMaxLifetimeSession(pool: *mut opaque::ODPIPool,
                                          value: *mut u32)
@@ -470,7 +470,7 @@ extern "C" {
                               -> ::std::os::raw::c_int;
     pub fn dpiPool_release(pool: *mut opaque::ODPIPool) -> ::std::os::raw::c_int;
     pub fn dpiPool_setGetMode(pool: *mut opaque::ODPIPool,
-                              value: flags::ODPIPoolGetMode)
+                              value: enums::ODPIPoolGetMode)
                               -> ::std::os::raw::c_int;
     pub fn dpiPool_setMaxLifetimeSession(pool: *mut opaque::ODPIPool,
                                          value: u32)
@@ -495,12 +495,12 @@ extern "C" {
     pub fn dpiStmt_bindValueByName(stmt: *mut opaque::ODPIStmt,
                                    name: *const ::std::os::raw::c_char,
                                    nameLength: u32,
-                                   nativeTypeNum: flags::ODPINativeTypeNum,
+                                   nativeTypeNum: enums::ODPINativeTypeNum,
                                    data: *mut structs::ODPIData)
                                    -> ::std::os::raw::c_int;
     pub fn dpiStmt_bindValueByPos(stmt: *mut opaque::ODPIStmt,
                                   pos: u32,
-                                  nativeTypeNum: flags::ODPINativeTypeNum,
+                                  nativeTypeNum: enums::ODPINativeTypeNum,
                                   data: *mut structs::ODPIData)
                                   -> ::std::os::raw::c_int;
     pub fn dpiStmt_close(stmt: *mut opaque::ODPIStmt,
@@ -563,7 +563,7 @@ extern "C" {
                                -> ::std::os::raw::c_int;
     pub fn dpiStmt_release(stmt: *mut opaque::ODPIStmt) -> ::std::os::raw::c_int;
     pub fn dpiStmt_scroll(stmt: *mut opaque::ODPIStmt,
-                          mode: flags::ODPIFetchMode,
+                          mode: enums::ODPIFetchMode,
                           offset: i32,
                           rowCountOffset: i32)
                           -> ::std::os::raw::c_int;

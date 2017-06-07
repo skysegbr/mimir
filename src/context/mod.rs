@@ -134,9 +134,9 @@ impl Drop for Context {
 mod test {
     use super::Context;
     use super::params::AppContext;
-    use odpi::{flags, structs};
-    use odpi::flags::ODPISubscrNamespace::*;
-    use odpi::flags::ODPISubscrProtocol::*;
+    use odpi::{enums, flags, structs};
+    use odpi::enums::ODPISubscrNamespace::*;
+    use odpi::enums::ODPISubscrProtocol::*;
     use std::ffi::CString;
 
     #[test]
@@ -191,11 +191,11 @@ mod test {
                         app_ctxt_vec.push(app_ctxt);
                         app_ctxt_vec.push(app_ctxt_1);
 
-                        assert!(purity_default_flags == flags::DPI_PURITY_DEFAULT);
+                        assert!(purity_default_flags == enums::ODPIPurity::DefaultPurity);
 
                         conn.set_auth_mode(auth_new_flags);
                         conn.set_connection_class("conn_class");
-                        conn.set_purity(flags::DPI_PURITY_NEW);
+                        conn.set_purity(enums::ODPIPurity::New);
                         conn.set_new_password("password");
                         conn.set_app_context(app_ctxt_vec);
                         conn.set_external_auth(1);
@@ -207,7 +207,7 @@ mod test {
                         assert!(conn.get_auth_mode() ==
                                 flags::DPI_MODE_AUTH_SYSDBA | flags::DPI_MODE_AUTH_DEFAULT);
                         assert!(conn.get_connection_class() == "conn_class");
-                        assert!(conn.get_purity() == flags::DPI_PURITY_NEW);
+                        assert!(conn.get_purity() == enums::ODPIPurity::New);
                         assert!(conn.get_new_password() == "password");
                         assert!(conn.get_num_app_context() == 2);
                         assert!(new_app_ctxt_vec.len() == 2);
@@ -253,7 +253,7 @@ mod test {
                         assert!(pcp.get_ping_timeout() == 5000);
                         assert!(pcp.get_homogeneous());
                         assert!(!pcp.get_external_auth());
-                        assert!(pcp.get_get_mode() == flags::ODPIPoolGetMode::NoWait);
+                        assert!(pcp.get_get_mode() == enums::ODPIPoolGetMode::NoWait);
                         assert!(pcp.get_out_pool_name() == "");
 
                         pcp.set_min_sessions(10);
@@ -263,7 +263,7 @@ mod test {
                         pcp.set_ping_timeout(1000);
                         pcp.set_homogeneous(false);
                         pcp.set_external_auth(true);
-                        pcp.set_get_mode(flags::ODPIPoolGetMode::ForceGet);
+                        pcp.set_get_mode(enums::ODPIPoolGetMode::ForceGet);
 
                         assert!(pcp.get_min_sessions() == 10);
                         assert!(pcp.get_max_sessions() == 100);
@@ -272,7 +272,7 @@ mod test {
                         assert!(pcp.get_ping_timeout() == 1000);
                         assert!(!pcp.get_homogeneous());
                         assert!(pcp.get_external_auth());
-                        assert!(pcp.get_get_mode() == flags::ODPIPoolGetMode::ForceGet);
+                        assert!(pcp.get_get_mode() == enums::ODPIPoolGetMode::ForceGet);
                     }
                     Err(_e) => assert!(false),
                 }

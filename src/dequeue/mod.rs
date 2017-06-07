@@ -11,7 +11,7 @@
 //! are destroyed by releasing the last reference by calling the function
 //! `dequeue::Options::release()`.
 use error::{ErrorKind, Result};
-use odpi::{externs, flags};
+use odpi::{enums, externs};
 use odpi::opaque::ODPIDeqOptions;
 use std::ptr;
 use util::ODPIStr;
@@ -98,8 +98,8 @@ impl Options {
     }
 
     /// Returns the mode that is to be used when dequeuing messages.
-    pub fn get_mode(&self) -> Result<flags::ODPIDeqMode> {
-        let mut deq_mod_ptr = flags::ODPIDeqMode::Remove;
+    pub fn get_mode(&self) -> Result<enums::ODPIDeqMode> {
+        let mut deq_mod_ptr = enums::ODPIDeqMode::Remove;
 
         try_dpi!(externs::dpiDeqOptions_getMode(self.inner, &mut deq_mod_ptr),
                  Ok(deq_mod_ptr),
@@ -125,8 +125,8 @@ impl Options {
     }
 
     /// Returns the position of the message that is to be dequeued.
-    pub fn get_navigation(&self) -> Result<flags::ODPIDeqNavigation> {
-        let mut nav = flags::ODPIDeqNavigation::NextMsg;
+    pub fn get_navigation(&self) -> Result<enums::ODPIDeqNavigation> {
+        let mut nav = enums::ODPIDeqNavigation::NextMsg;
 
         try_dpi!(externs::dpiDeqOptions_getNavigation(self.inner, &mut nav),
                  Ok(nav),
@@ -155,8 +155,8 @@ impl Options {
 
     /// Returns whether the message being dequeued is part of the current transaction or constitutes
     /// a transaction on its own.
-    pub fn get_visibility(&self) -> Result<flags::ODPIVisibility> {
-        let mut visibility = flags::ODPIVisibility::OnCommit;
+    pub fn get_visibility(&self) -> Result<enums::ODPIVisibility> {
+        let mut visibility = enums::ODPIVisibility::OnCommit;
 
         try_dpi!(externs::dpiDeqOptions_getVisibility(self.inner, &mut visibility),
                  Ok(visibility),
@@ -229,7 +229,7 @@ impl Options {
     ///
     /// * `mode` - he mode that should be used. It should be one of the values from the enumeration
     /// `ODPIDeqMode`.
-    pub fn set_mode(&self, mode: flags::ODPIDeqMode) -> Result<()> {
+    pub fn set_mode(&self, mode: enums::ODPIDeqMode) -> Result<()> {
         try_dpi!(externs::dpiDeqOptions_setMode(self.inner, mode),
                  Ok(()),
                  ErrorKind::DeqOptions("dpiDeqOptions_setMode".to_string()))
@@ -251,7 +251,7 @@ impl Options {
     ///
     /// * `nav` - the value that should be used. It should be one of the values from the enumeration
     /// `ODPIDeqNavigation`.
-    pub fn set_navigation(&self, nav: flags::ODPIDeqNavigation) -> Result<()> {
+    pub fn set_navigation(&self, nav: enums::ODPIDeqNavigation) -> Result<()> {
         try_dpi!(externs::dpiDeqOptions_setNavigation(self.inner, nav),
                  Ok(()),
                  ErrorKind::DeqOptions("dpiDeqOptions_setNavigation".to_string()))
@@ -278,7 +278,7 @@ impl Options {
     ///
     /// * `visibility` - the value that should be used. It should be one of the values from the
     /// enumeration `ODPIVisibility`.
-    pub fn set_visibility(&self, visibility: flags::ODPIVisibility) -> Result<()> {
+    pub fn set_visibility(&self, visibility: enums::ODPIVisibility) -> Result<()> {
         try_dpi!(externs::dpiDeqOptions_setVisibility(self.inner, visibility),
                  Ok(()),
                  ErrorKind::DeqOptions("dpiDeqOptions_setVisibility".to_string()))
@@ -307,10 +307,10 @@ mod test {
     use connection::Connection;
     use context::Context;
     use error::Result;
-    use odpi::flags::ODPIConnCloseMode::*;
-    use odpi::flags::ODPIDeqMode::*;
-    use odpi::flags::ODPIDeqNavigation::*;
-    use odpi::flags::ODPIVisibility::*;
+    use odpi::flags;
+    use odpi::enums::ODPIDeqMode::*;
+    use odpi::enums::ODPIDeqNavigation::*;
+    use odpi::enums::ODPIVisibility::*;
     use std::ffi::CString;
     use test::CREDS;
 
@@ -376,7 +376,7 @@ mod test {
         dequeue_opts.release()?;
 
         conn.release()?;
-        conn.close(DefaultClose, None)?;
+        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
 
         Ok(())
     }
