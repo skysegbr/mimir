@@ -105,7 +105,7 @@ impl Statement {
                                                   name_s.ptr(),
                                                   name_s.len(),
                                                   native_type,
-                                                  data.data()),
+                                                  data.inner()),
                  Ok(()),
                  ErrorKind::Statement("dpiStmt_bindValueByName".to_string()))
     }
@@ -127,7 +127,7 @@ impl Statement {
                              native_type: enums::ODPINativeTypeNum,
                              data: &Data)
                              -> Result<()> {
-        try_dpi!(externs::dpiStmt_bindValueByPos(self.inner, pos, native_type, data.data()),
+        try_dpi!(externs::dpiStmt_bindValueByPos(self.inner, pos, native_type, data.inner()),
                  Ok(()),
                  ErrorKind::Statement("dpiStmt_bindValueByPos".to_string()))
     }
