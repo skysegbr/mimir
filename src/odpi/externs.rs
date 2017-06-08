@@ -15,32 +15,6 @@ pub type ODPISubscrCallback =
                                 message: *mut structs::ODPISubscrMessage)>;
 
 extern "C" {
-    pub fn dpiContext_create(majorVersion: ::std::os::raw::c_uint,
-                             minorVersion: ::std::os::raw::c_uint,
-                             context: *mut *mut opaque::ODPIContext,
-                             errorInfo: *mut structs::ODPIErrorInfo)
-                             -> ::std::os::raw::c_int;
-    pub fn dpiContext_destroy(context: *mut opaque::ODPIContext) -> ::std::os::raw::c_int;
-    pub fn dpiContext_getClientVersion(context: *const opaque::ODPIContext,
-                                       versionInfo: *mut structs::ODPIVersionInfo)
-                                       -> ::std::os::raw::c_int;
-    pub fn dpiContext_getError(context: *const opaque::ODPIContext,
-                               errorInfo: *mut structs::ODPIErrorInfo);
-    pub fn dpiContext_initCommonCreateParams(context: *const opaque::ODPIContext,
-                                             params: *mut structs::ODPICommonCreateParams)
-                                             -> ::std::os::raw::c_int;
-    pub fn dpiContext_initConnCreateParams(context: *const opaque::ODPIContext,
-                                           params: *mut structs::ODPIConnCreateParams)
-                                           -> ::std::os::raw::c_int;
-    pub fn dpiContext_initPoolCreateParams(context: *const opaque::ODPIContext,
-                                           params: *mut structs::ODPIPoolCreateParams)
-                                           -> ::std::os::raw::c_int;
-    pub fn dpiContext_initSubscrCreateParams(context: *const opaque::ODPIContext,
-                                             params: *mut structs::ODPISubscrCreateParams)
-                                             -> ::std::os::raw::c_int;
-}
-
-extern "C" {
     pub fn dpiConn_addRef(conn: *mut opaque::ODPIConn) -> ::std::os::raw::c_int;
     pub fn dpiConn_beginDistribTrans(conn: *mut opaque::ODPIConn,
                                      formatId: ::std::os::raw::c_long,
@@ -108,9 +82,9 @@ extern "C" {
                                    value: *mut *const ::std::os::raw::c_char,
                                    valueLength: *mut u32)
                                    -> ::std::os::raw::c_int;
-    // pub fn dpiConn_getHandle(conn: *mut opaque::ODPIConn,
-    //                          handle: *mut *mut ::std::os::raw::c_void)
-    //                          -> ::std::os::raw::c_int;
+    pub fn dpiConn_getHandle(conn: *mut opaque::ODPIConn,
+                             handle: *mut *mut ::std::os::raw::c_void)
+                             -> ::std::os::raw::c_int;
     pub fn dpiConn_getInternalName(conn: *mut opaque::ODPIConn,
                                    value: *mut *const ::std::os::raw::c_char,
                                    valueLength: *mut u32)
@@ -216,6 +190,32 @@ extern "C" {
     pub fn dpiConn_startupDatabase(conn: *mut opaque::ODPIConn,
                                    mode: enums::ODPIStartupMode)
                                    -> ::std::os::raw::c_int;
+}
+
+extern "C" {
+    pub fn dpiContext_create(majorVersion: ::std::os::raw::c_uint,
+                             minorVersion: ::std::os::raw::c_uint,
+                             context: *mut *mut opaque::ODPIContext,
+                             errorInfo: *mut structs::ODPIErrorInfo)
+                             -> ::std::os::raw::c_int;
+    pub fn dpiContext_destroy(context: *mut opaque::ODPIContext) -> ::std::os::raw::c_int;
+    pub fn dpiContext_getClientVersion(context: *const opaque::ODPIContext,
+                                       versionInfo: *mut structs::ODPIVersionInfo)
+                                       -> ::std::os::raw::c_int;
+    pub fn dpiContext_getError(context: *const opaque::ODPIContext,
+                               errorInfo: *mut structs::ODPIErrorInfo);
+    pub fn dpiContext_initCommonCreateParams(context: *const opaque::ODPIContext,
+                                             params: *mut structs::ODPICommonCreateParams)
+                                             -> ::std::os::raw::c_int;
+    pub fn dpiContext_initConnCreateParams(context: *const opaque::ODPIContext,
+                                           params: *mut structs::ODPIConnCreateParams)
+                                           -> ::std::os::raw::c_int;
+    pub fn dpiContext_initPoolCreateParams(context: *const opaque::ODPIContext,
+                                           params: *mut structs::ODPIPoolCreateParams)
+                                           -> ::std::os::raw::c_int;
+    pub fn dpiContext_initSubscrCreateParams(context: *const opaque::ODPIContext,
+                                             params: *mut structs::ODPISubscrCreateParams)
+                                             -> ::std::os::raw::c_int;
 }
 
 extern "C" {

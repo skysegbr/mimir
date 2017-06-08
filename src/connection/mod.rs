@@ -303,15 +303,21 @@ impl Connection {
                  ErrorKind::Connection("dpiConn_getEdition".to_string()))
     }
 
-    /// Returns the OCI service context handle in use by the connection.
-    // TODO: What is this a handle for?  Connection probably? Don't expose c_void.
-    // pub fn get_handle(&self) -> Result<*mut ::std::os::raw::c_void> {
-    //     let mut pdst = ptr::null_mut();
+    #[doc(hidden)]
+    /// Returns the OCI service context handle in use by the connection. This is a OCI_HTYPE_SVCCTX
+    /// handle pointing to an OCISvcCtx struct from the OCI library.
+    // TODO: Don't expose c_void.
+    pub fn get_handle(&self) -> Result<()> {
+        let mut pdst = ptr::null_mut();
 
-    //     try_dpi!(externs::dpiConn_getHandle(self.inner, &mut pdst),
-    //              Ok(pdst),
-    //              ErrorKind::Connection("dpiConn_getHandle".to_string()))
-    // }
+        try_dpi!(externs::dpiConn_getHandle(self.inner, &mut pdst),
+                 {
+                     // TODO: cast pdst to a svcctx struct
+                     Ok(())
+                 },
+                 ErrorKind::Connection("dpiConn_getHandle".to_string()))
+    }
+
     /// Returns the internal name that is being used by the connection. This value is used when
     /// logging distributed transactions.
     pub fn get_internal_name(&self) -> Result<String> {
