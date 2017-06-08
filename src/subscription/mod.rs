@@ -39,6 +39,13 @@ impl Subscription {
     }
 
     ///
+    pub fn release(&self) -> Result<()> {
+        try_dpi!(externs::dpiSubscr_release(self.inner),
+                 Ok(()),
+                 ErrorKind::Subscription("dpiSubscr_release".to_string()))
+    }
+
+    ///
     pub fn set_id(&mut self, id: u32) -> &mut Subscription {
         self.id = id;
         self

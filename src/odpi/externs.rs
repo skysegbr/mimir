@@ -571,6 +571,7 @@ extern "C" {
 
 extern "C" {
     pub fn dpiSubscr_addRef(subscr: *mut opaque::ODPISubscr) -> ::std::os::raw::c_int;
+    pub fn dpiSubscr_release(subscr: *mut opaque::ODPISubscr) -> ::std::os::raw::c_int;
 }
 
 #[allow(dead_code)]

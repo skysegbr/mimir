@@ -720,507 +720,165 @@ impl From<*mut ODPIConn> for Connection {
 
 #[cfg(test)]
 mod test {
-    use test::{ContextResult, CREDS, CTXT, ENC};
+    use test::CREDS;
     use connection::Connection;
     use context::Context;
-    use error;
+    use error::Result;
     use odpi::enums::ODPIDeqMode::*;
     use odpi::enums::ODPIMessageDeliveryMode::*;
     use odpi::enums::ODPINativeTypeNum::*;
     use odpi::enums::ODPIOracleTypeNum::*;
     use odpi::enums::ODPIVisibility::*;
+    use odpi::flags;
     use odpi::structs::ODPISubscrMessage;
     use rand::{self, Rng};
-
-    enum ConnResult {
-        Ok(Connection),
-        Err(error::Error),
-    }
-
-    unsafe impl Sync for ConnResult {}
-
-    lazy_static! {
-        static ref CONN: ConnResult = {
-            let ctxt = match *CTXT {
-                ContextResult::Ok(ref ctxt) => ctxt,
-                ContextResult::Err(ref _e) => return ConnResult::Err(
-                    error::ErrorKind::Connection("CONTEXT".to_string()).into()
-                ),
-            };
-            let ccp = match ctxt.init_common_create_params() {
-                Ok(mut ccp) => {
-                    ccp.set_encoding(ENC.as_ptr());
-                    ccp.set_nchar_encoding(ENC.as_ptr());
-                    ccp
-                },
-                Err(e) => return ConnResult::Err(e),
-            };
-            match Connection::create(ctxt,
-                                     Some(&CREDS[0]),
-                                     Some(&CREDS[1]),
-                                     Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
-                                     Some(ccp),
-                                     None) {
-                Ok(conn) => ConnResult::Ok(conn),
-                Err(e) => ConnResult::Err(e),
-            }
-        };
-    }
-
-
-    fn context_error_info(ctxt: &Context) {
-        use std::io::{self, Write};
-        let ctxt_error = ctxt.get_error();
-        writeln!(io::stderr(), "{}", ctxt_error).expect("badness");
-        assert!(false);
-    }
-
-    #[test]
-    fn create() {
-        match *CONN {
-            ConnResult::Ok(ref _conn) => assert!(true),
-            ConnResult::Err(ref _e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn add_ref_release() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.add_ref() {
-            Ok(_) => {
-                match conn.release() {
-                    Ok(_) => assert!(true),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn break_execution() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.break_execution() {
-            Ok(_) => assert!(true),
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn begin_tx_prepare_commit() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        let mut rng = rand::thread_rng();
-        match conn.begin_distrib_trans(rng.gen::<i64>(), "One", "Two") {
-            Ok(_) => {
-                match conn.prepare_distrib_trans() {
-                    Ok(commit_needed) => assert!(!commit_needed),
-                    Err(e) => ::test::error_info(e),
-                }
-                // let ten_millis = ::std::time::Duration::from_millis(1000);
-                // ::std::thread::sleep(ten_millis);
-                // match conn.commit() {
-                //     Ok(_) => assert!(true),
-                //     Err(e) => error_info(e),
-                // }
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
-
-    #[test]
-    fn set_get_current_schema() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_current_schema("jozias") {
-            Ok(_) => {
-                match conn.get_current_schema() {
-                    Ok(schema) => assert!(schema == "jozias"),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn get_edition() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.get_edition() {
-            Ok(edition) => assert!(edition == ""),
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn get_encoding_info() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.get_encoding_info() {
-            Ok(ei) => {
-                assert!(ei.encoding() == "UTF-8");
-                assert!(ei.nchar_encoding() == "UTF-8");
-                assert!(ei.max_bytes_per_char() == 4);
-                assert!(ei.max_bytes_per_nchar() == 4);
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn set_get_external_name() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_external_name("oic") {
-            Ok(_) => {
-                match conn.get_external_name() {
-                    Ok(external_name) => assert!(external_name == "oic"),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn set_get_internal_name() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_internal_name("oic_int") {
-            Ok(_) => {
-                match conn.get_internal_name() {
-                    Ok(internal_name) => assert!(internal_name == "oic_int"),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn get_ltxid() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.get_ltxid() {
-            Ok(ltxid) => assert!(ltxid == ""),
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn server_version() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.get_server_version() {
-            Ok(version_info) => {
-                assert!(version_info.version() == "12.1.0.2.0");
-                assert!(version_info.version_num() == 1201000200);
-                assert!(version_info.release() ==
-                        "Oracle Database 12c Standard Edition Release 12.1.0.2.0 - \
-                        64bit Production");
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
-
-    #[test]
-    fn set_get_statement_cache() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_statement_cache_size(40) {
-            Ok(_) => {
-                match conn.get_statement_cache_size() {
-                    Ok(cache_size) => assert!(cache_size == 40),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn new_deq_options() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.new_deq_options() {
-            Ok(deq_opts) => {
-                match deq_opts.get_mode() {
-                    Ok(mode) => assert!(mode == Remove),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn new_enq_options() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.new_enq_options() {
-            Ok(enq_opts) => {
-                match enq_opts.get_visibility() {
-                    Ok(visibliity) => assert!(visibliity == OnCommit),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn new_msg_props() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.new_msg_props() {
-            Ok(msg_props) => {
-                match msg_props.get_delivery_mode() {
-                    Ok(delivery_mode) => assert!(delivery_mode == NotSet),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(_) => assert!(false),
-        }
-    }
+    use std::ffi::CString;
 
     extern "C" fn subscr_callback(_context: *mut ::std::os::raw::c_void,
                                   _message: *mut ODPISubscrMessage) {
         // For testing
     }
 
-    #[test]
-    #[ignore]
-    fn new_subscription() {
-        let (ctxt, conn, scp) = match Context::create() {
-            Ok(ctxt) => {
-                let ccp = match ctxt.init_common_create_params() {
-                    Ok(mut ccp) => {
-                        ccp.set_encoding(ENC.as_ptr());
-                        ccp.set_nchar_encoding(ENC.as_ptr());
-                        ccp
-                    }
-                    Err(_e) => return context_error_info(&ctxt),
-                };
-                let scp = match ctxt.init_subscr_create_params() {
-                    Ok(mut scp) => {
-                        scp.set_port_number(32276);
-                        scp.set_timeout(10000);
-                        scp.set_name("subscription");
-                        scp.set_callback(Some(subscr_callback));
-                        scp.set_recipient_name("yoda");
-                        scp
-                    }
-                    Err(_e) => return context_error_info(&ctxt),
-                };
-                let conn =
-                    match Connection::create(&ctxt,
-                                             Some(&CREDS[0]),
-                                             Some(&CREDS[1]),
-                                             Some("//oic.cbsnae86d3iv.us-east-2.rds.\
-                                                    amazonaws.com/ORCL"),
-                                             Some(ccp),
-                                             None) {
-                        Ok(conn) => conn,
-                        Err(_e) => return context_error_info(&ctxt),
-                    };
-                (ctxt, conn, scp)
+    fn within_context(ctxt: &Context) -> Result<()> {
+        let mut ccp = ctxt.init_common_create_params()?;
+        let enc_cstr = CString::new("UTF-8").expect("badness");
+        ccp.set_encoding(enc_cstr.as_ptr());
+        ccp.set_nchar_encoding(enc_cstr.as_ptr());
+        ccp.set_create_mode(flags::DPI_MODE_CREATE_EVENTS);
+
+        let conn = Connection::create(ctxt,
+                                      Some(&CREDS[0]),
+                                      Some(&CREDS[1]),
+                                      Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
+                                      Some(ccp),
+                                      None)?;
+        // add_ref / release / break_execution test
+        conn.add_ref()?;
+        conn.release()?;
+        conn.break_execution()?;
+        conn.ping()?;
+
+        // set_current_schema / get_current_schema test
+        conn.set_current_schema("jozias")?;
+        let current_schema = conn.get_current_schema()?;
+        assert_eq!(current_schema, "jozias");
+
+        let edition = conn.get_edition()?;
+        assert_eq!(edition, "");
+
+        conn.set_external_name("ext")?;
+        let external_name = conn.get_external_name()?;
+        assert_eq!(external_name, "ext");
+
+        conn.set_internal_name("ext")?;
+        let internal_name = conn.get_internal_name()?;
+        assert_eq!(internal_name, "ext");
+
+        let encoding_info = conn.get_encoding_info()?;
+        assert!(encoding_info.encoding() == "UTF-8");
+        assert!(encoding_info.nchar_encoding() == "UTF-8");
+        assert!(encoding_info.max_bytes_per_char() == 4);
+        assert!(encoding_info.max_bytes_per_nchar() == 4);
+
+        conn.set_statement_cache_size(40)?;
+        let statement_cache_size = conn.get_statement_cache_size()?;
+        assert_eq!(statement_cache_size, 40);
+
+        // begin_distrib_trans / get_ltxid / prepare_distrib_trans
+        let mut rng = rand::thread_rng();
+        conn.begin_distrib_trans(rng.gen::<i64>(), "One", "Two")?;
+        let ltxid = conn.get_ltxid()?;
+        assert_eq!(ltxid, "");
+        let commit_needed = conn.prepare_distrib_trans()?;
+        assert!(!commit_needed);
+
+        // get_server_version
+        let version_info = conn.get_server_version()?;
+        assert!(version_info.version() == "12.1.0.2.0");
+        assert!(version_info.version_num() == 1201000200);
+        assert!(version_info.release() ==
+                "Oracle Database 12c Standard Edition Release 12.1.0.2.0 - \
+                64bit Production");
+
+        // new_deq_options
+        let deq_opts = conn.new_deq_options()?;
+        let mode = deq_opts.get_mode()?;
+        assert_eq!(mode, Remove);
+
+        // new_enq_options
+        let enq_opts = conn.new_enq_options()?;
+        let visibility = enq_opts.get_visibility()?;
+        assert_eq!(visibility, OnCommit);
+
+        // new_msg_props
+        let msg_props = conn.new_msg_props()?;
+        let delivery_mode = msg_props.get_delivery_mode()?;
+        assert_eq!(delivery_mode, NotSet);
+
+        // new_subscr_props
+        let mut scp = ctxt.init_subscr_create_params()?;
+        scp.set_port_number(32276);
+        scp.set_timeout(10000);
+        scp.set_name("subscription");
+        scp.set_callback(Some(subscr_callback));
+        scp.set_recipient_name("yoda");
+
+        let subscription = conn.new_subscription(scp)?;
+        subscription.add_ref()?;
+        subscription.release()?;
+
+        // new_temp_lob
+        let clob = conn.new_temp_lob(Clob)?;
+        let chunk_size = clob.get_chunk_size()?;
+        assert_eq!(chunk_size, 8132);
+
+        // new_var
+        let var = conn.new_var(Varchar, Bytes, 5, 256, false, false)?;
+        let sib = var.get_size_in_bytes()?;
+        assert_eq!(sib, 1024);
+        let num_elements_in_array = var.get_num_elements_in_array()?;
+        assert_eq!(num_elements_in_array, 5);
+        let data_arr = var.get_data()?;
+        assert_eq!(data_arr.len(), 5);
+
+        // prepare_stmt
+        let statement = conn.prepare_stmt(Some("select 1 from dual"), None, false)?;
+        statement.add_ref()?;
+        statement.release()?;
+
+        // sets
+        conn.set_action("action")?;
+        conn.set_client_identifier("client_identifier")?;
+        conn.set_client_info("client_info")?;
+        conn.set_db_op("insert")?;
+        conn.set_module("module")?;
+
+        Ok(())
+    }
+
+    fn connection_res() -> Result<()> {
+        use std::io::{self, Write};
+
+        let ctxt = Context::create()?;
+        match within_context(&ctxt) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                writeln!(io::stderr(), "{}", ctxt.get_error())?;
+                Err(e)
             }
-            Err(_e) => return assert!(false),
-        };
+        }
+    }
 
-        match conn.new_subscription(scp) {
-            Ok(subscription) => {
-                match subscription.add_ref() {
-                    Ok(_) => assert!(true),
-                    Err(_e) => context_error_info(&ctxt),
-                }
+    #[test]
+    fn connection() {
+        use std::io::{self, Write};
+
+        match connection_res() {
+            Ok(_) => assert!(true),
+            Err(e) => {
+                writeln!(io::stderr(), "{}", e).expect("badness");
+                assert!(false);
             }
-            Err(_e) => context_error_info(&ctxt),
-        }
-    }
-
-    #[test]
-    pub fn new_temp_lob() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.new_temp_lob(Clob) {
-            Ok(msg_props) => {
-                match msg_props.get_chunk_size() {
-                    Ok(chunk_size) => assert!(chunk_size == 8132),
-                    Err(_) => assert!(false),
-                }
-            }
-            Err(e) => ::test::error_info(e),
-        }
-    }
-
-    #[test]
-    fn new_var() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-        match conn.new_var(Varchar, Bytes, 5, 256, false, false) {
-            Ok(var) => {
-                if let Ok(sib) = var.get_size_in_bytes() {
-                    assert!(sib == 1024);
-                } else {
-                    assert!(false);
-                }
-
-                if let Ok(ne) = var.get_num_elements_in_array() {
-                    assert!(ne == 5);
-                } else {
-                    assert!(false);
-                }
-
-                if let Ok(ne) = var.get_data() {
-                    assert!(ne.len() == 5);
-                } else {
-                    assert!(false);
-                }
-            }
-            Err(_e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn ping() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.ping() {
-            Ok(_) => assert!(true),
-            Err(_) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn prepare_stmt() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.prepare_stmt(Some("select 1 from dual"), None, false) {
-            Ok(_stmt) => assert!(true),
-            Err(_e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn set_action() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_action("action") {
-            Ok(_) => assert!(true),
-            Err(_e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn set_client_identifier() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_client_identifier("client_identifier") {
-            Ok(_) => assert!(true),
-            Err(_e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn set_client_info() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_client_info("client_info") {
-            Ok(_) => assert!(true),
-            Err(_e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn set_db_op() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_db_op("select") {
-            Ok(_) => assert!(true),
-            Err(_e) => assert!(false),
-        }
-    }
-
-    #[test]
-    fn set_module() {
-        let conn = match *CONN {
-            ConnResult::Ok(ref conn) => conn,
-            ConnResult::Err(ref _e) => return assert!(false),
-        };
-
-        match conn.set_module("module") {
-            Ok(_) => assert!(true),
-            Err(_e) => assert!(false),
         }
     }
 }
