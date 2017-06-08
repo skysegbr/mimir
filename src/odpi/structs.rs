@@ -400,21 +400,49 @@ pub struct ODPIObjectAttrInfo {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
+/// This structure is used for passing information about an object type from ODPI-C. It is used by
+/// the function `ObjectType::getInfo()`.
+pub struct ODPIObjectTypeInfo {
+    /// Specifies the schema which owns the object type, as a byte string in the encoding used for
+    /// CHAR data.
+    pub schema: *const ::std::os::raw::c_char,
+    /// Specifies the length of the `schema` member, in bytes.
+    pub schema_length: u32,
+    /// Specifies the name of the object type, as a byte string in the encoding used for CHAR data.
+    pub name: *const ::std::os::raw::c_char,
+    /// Specifies the length of the `name` member, in bytes.
+    pub name_length: u32,
+    /// Specifies if the object type is a collection (1) or not (0).
+    pub is_collection: ::std::os::raw::c_int,
+    /// Specifies the Oracle type of the elements in the collection if the object type refers to a
+    /// collection. It will be one of the values from the enumeration `ODPIOracleTypeNum`.
+    pub element_oracle_type_num: enums::ODPIOracleTypeNum,
+    /// Specifies the default native type of the elements in the collection if the object type
+    /// refers to a collection. It will be one of the values from the enumeration
+    /// `ODPINativeTypeNum`.
+    pub element_default_native_type_num: enums::ODPINativeTypeNum,
+    /// Specifies a reference to the object type of the elements in the collection if the object
+    /// type on which info is being returned refers to a collection.
+    pub element_object_type: *mut opaque::ODPIObjectType,
+    /// Specifies the number of attributes that the object type has.
+    pub num_attributes: u16,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
 /// This structure is used for creating session pools, which can in turn be used to create
 /// connections that are acquired from that session pool.
 pub struct ODPIPoolCreateParams {
     /// Specifies the minimum number of sessions to be created by the session pool. This value is
-    /// ignored if the dpiPoolCreateParams.homogeneous member has a value of 0. The default value
-    /// is 1.
+    /// ignored if the `homogeneous` member has a value of 0. The default value is 1.
     pub min_sessions: u32,
     /// Specifies the maximum number of sessions that can be created by the session pool. Values of
     /// 1 and higher are acceptable. The default value is 1.
     pub max_sessions: u32,
     /// Specifies the number of sessions that will be created by the session pool when more sessions
     /// are required and the number of sessions is less than the maximum allowed. This value is
-    /// ignored if the dpiPoolCreateParams.homogeneous member has a value of 0. This value added to
-    /// the dpiPoolCreateParams.minSessions member value must not exceed the
-    /// dpiPoolCreateParams.maxSessions member value. The default value is 0.
+    /// ignored if the `homogeneous` member has a value of 0. This value added to the `minSessions`
+    /// member value must not exceed the `maxSessions` member value. The default value is 0.
     pub session_increment: u32,
     /// Specifies the number of seconds since a connection has last been used before a ping will be
     /// performed to verify that the connection is still valid. A negative value disables this
@@ -432,7 +460,7 @@ pub struct ODPIPoolCreateParams {
     pub homogeneous: c_int,
     /// Specifies whether external authentication should be used to create the sessions in the pool.
     /// If this value is 0, the user name and password values must be specified in the call to
-    /// dpiPool_create(); otherwise, the user name and password values must be zero length or NULL.
+    /// `Pool::create()`; otherwise, the user name and password values must be zero length or NULL.
     /// The default value is 0.
     pub external_auth: c_int,
     /// Specifies the mode to use when sessions are acquired from the pool. It is expected to be one
@@ -440,12 +468,12 @@ pub struct ODPIPoolCreateParams {
     /// DPI_MODE_POOL_GET_NOWAIT
     pub get_mode: enums::ODPIPoolGetMode,
     /// This member is populated upon successful creation of a pool using the function
-    /// dpiPool_create(). It is a byte string in the encoding used for CHAR data. Any value
+    /// `Pool::create()`. It is a byte string in the encoding used for CHAR data. Any value
     /// specified prior to creating the session pool is ignored.
     pub out_pool_name: *const c_char,
     /// This member is populated upon successful creation of a pool using the function
-    /// dpiPool_create(). It is the length of the dpiPoolCreateParams.outPoolName member, in bytes.
-    /// Any value specified prior to creating the session pool is ignored.
+    /// `Pool::create()`. It is the length of the `out_pool_name` member, in bytes. Any value
+    /// specified prior to creating the session pool is ignored.
     pub out_pool_name_length: u32,
 }
 
@@ -469,13 +497,13 @@ impl Default for ODPIPoolCreateParams {
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 /// This structure is used for passing query metadata from ODPI-C. It is populated by the function
-/// `dpiStmt_getQueryInfo()`. All values remain valid as long as a reference is held to the
+/// `Statement::getQueryInfo()`. All values remain valid as long as a reference is held to the
 /// statement and the statement is not re-executed or closed.
 pub struct ODPIQueryInfo {
     /// Specifies the name of the column which is being queried, as a byte string in the encoding
     /// used for CHAR data.
     pub name: *const ::std::os::raw::c_char,
-    /// Specifies the length of the dpiQueryInfo.name member, in bytes.
+    /// Specifies the length of the `name` member, in bytes.
     pub name_length: u32,
     /// Specifies the type of the column that is being queried. It will be one of the values from
     /// the enumeration `ODPIOracleTypeNum`.
@@ -541,10 +569,9 @@ pub struct ODPIStmtInfo {
     /// Specifies if the statement refers to DML (data manipulation language) such as inserting,
     /// updating and deleting (1) or not (0).
     pub is_dml: ::std::os::raw::c_int,
-    /// Specifies the type of statement that has been prepared. The members `ODPIStmtInfo.isQuery`,
-    /// `ODPIStmtInfo.isPLSQL`, `ODPIStmtInfo.isDDL` and `ODPIStmtInfo.isDML` are all
-    /// categorizations of this value. It will be one of the values from the enumeration
-    /// `ODPIStatementType`.
+    /// Specifies the type of statement that has been prepared. The members `is_query`, `is_plsql`,
+    /// `is_ddl` and `is_dml` are all categorizations of this value. It will be one of the values
+    /// from the enumeration `ODPIStatementType`.
     pub statement_type: enums::ODPIStatementType,
     /// Specifies if the statement has a returning clause in it (1) or not (0).
     pub is_returning: ::std::os::raw::c_int,
@@ -592,19 +619,19 @@ pub struct ODPISubscrCreateParams {
     /// is 0.
     pub timeout: u32,
     /// Specifies the name of the subscription, as a byte string in the encoding used for CHAR data.
-    /// This name must be consistent with the namespace identified in the
-    /// dpiSubscrCreateParams.subscrNamespace member. The default value is NULL.
+    /// This name must be consistent with the namespace identified in the `subscr_namespace` member.
+    /// The default value is NULL.
     pub name: *const c_char,
-    /// Specifies the length of the dpiSubscrCreateParams.name member, in bytes. The default value
+    /// Specifies the length of the `name` member, in bytes. The default value
     /// is 0.
     pub name_length: u32,
     /// Specifies the callback that will be called when a notification is sent to the subscription,
-    /// if the dpiSubscrCreateParams.protocol member is set to DPI_SUBSCR_PROTO_CALLBACK. The
-    /// callback accepts the following arguments:
+    /// if the `protocol` member is set to DPI_SUBSCR_PROTO_CALLBACK. The callback accepts the
+    /// following arguments:
     ///
-    /// * context -- the value of the dpiSubscrCreateParams.callbackContext member.
+    /// * context -- the value of the `callback_context` member.
     /// * message -- a pointer to the message that is being sent. The message is in the form
-    ///                `ODPISubscrMessage`.
+    ///              `ODPISubscrMessage`.
     ///
     /// The default value is NULL. If a callback is specified and a notification is sent, this will
     /// be performed on a separate thread. If database operations are going to take place, ensure
@@ -612,14 +639,13 @@ pub struct ODPISubscrCreateParams {
     /// when creating the session pool or standalone connection that will be used in this callback.
     pub callback: externs::ODPISubscrCallback,
     /// Specifies the value that will be used as the first argument to the callback specified in the
-    /// dpiSubscrCreateParams.callback member. The default value is NULL.
+    /// `callback` member. The default value is NULL.
     pub callback_context: *mut c_void,
     /// Specifies the name of the recipient to which notifications are sent when the
     /// dpiSubscrCreateParams.protocol member is not set to DPI_SUBSCR_PROTO_CALLBACK. The value is
     /// expected to be a byte string in the encoding used for CHAR data. The default value is NULL.
     pub recipient_name: *const c_char,
-    /// Specifies the length of the dpiSubscrCreateParams.recipientName member, in bytes. The
-    /// default value is 0.
+    /// Specifies the length of the `recipient_name` member, in bytes. The default value is 0.
     pub recipient_name_length: u32,
 }
 
@@ -653,24 +679,42 @@ pub struct ODPISubscrMessage {
     /// Specifies the name of the database which generated the notification, as a byte string in the
     /// encoding used for CHAR data.
     pub db_name: *const c_char,
-    /// Specifies the length of the dpiSubscrMessage.dbName member, in bytes.
+    /// Specifies the length of the `db_name` member, in bytes.
     pub db_name_length: u32,
     /// Specifies a pointer to an array of `ODPISubscrMessageTable` structures representing the list
     /// of tables that were modified and generated this notification. This value will be NULL if the
-    /// value of the dpiSubscrMessage.eventType member is not equal to DPI_EVENT_OBJCHANGE.
+    /// value of the `event_type` member is not equal to DPI_EVENT_OBJCHANGE.
     pub tables: *mut ODPISubscrMessageTable,
-    /// Specifies the number of structures available in the dpiSubscrMessage.tables member.
+    /// Specifies the number of structures available in the `tables` member.
     pub num_tables: u32,
-    /// Specifies a pointer to an array of dpiSubscrMessageQuery structures representing the list of
-    /// queries that were modified and generated this notification. This value will be NULL if the
-    /// value of the dpiSubscrMessage.eventType member is not equal to DPI_EVENT_QUERYCHANGE.
-    // pub queries: *mut dpiSubscrMessageQuery,
-    /// Specifies the number of structures available in the dpiSubscrMessage.queries member.
+    /// Specifies a pointer to an array of `ODPISubscrMessageQuery` structures representing the list
+    /// of queries that were modified and generated this notification. This value will be NULL if
+    /// the value of the `event_type` member is not equal to DPI_EVENT_QUERYCHANGE.
+    pub queries: *mut ODPISubscrMessageQuery,
+    /// Specifies the number of structures available in the `queries` member.
     pub num_queries: u32,
-    /// Specifies a pointer to a dpiErrorInfo structure. This value will be NULL if no error has
+    /// Specifies a pointer to a `ODPIErrorInfo` structure. This value will be NULL if no error has
     /// taken place. If this value is not NULL the other members in this structure may not contain
     /// valid values.
     pub error_info: *mut ODPIErrorInfo,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+/// This structure is used for passing information on query change notification events and is part
+/// of the `ODPISubscrMessage` structure.
+pub struct ODPISubscrMessageQuery {
+    /// Specifies the id of the query that was registered as part of the subscription that generated
+    /// this notification.
+    pub id: u64,
+    /// Specifies the operations that took place on the registered query. It will be one or more of
+    /// the values from the enumeration `ODPIOpCode`, OR'ed together.
+    pub operation: flags::ODPIOpCode,
+    /// Specifies a pointer to an array of `ODPISubscrMessageTable` structures representing the list
+    /// of tables that were modified by the event which generated this notification.
+    pub tables: *mut ODPISubscrMessageTable,
+    /// Specifies the number of structures available in the `tables` member.
+    pub num_tables: u32,
 }
 
 #[repr(C)]
@@ -683,7 +727,7 @@ pub struct ODPISubscrMessageRow {
     pub operation: flags::ODPIOpCode,
     /// Specifies the rowid of the row that was changed, in the encoding used for CHAR data.
     pub rowid: *const c_char,
-    /// Specifies the length of the dpiSubscrMessageRow.rowid member, in bytes.
+    /// Specifies the length of the `rowid` member, in bytes.
     pub rowid_length: u32,
 }
 
@@ -697,12 +741,12 @@ pub struct ODPISubscrMessageTable {
     pub operation: flags::ODPIOpCode,
     /// Specifies the name of the table that was changed, in the encoding used for CHAR data.
     pub name: *const c_char,
-    /// Specifies the length of the dpiSubscrMessageRow.name member, in bytes.
+    /// Specifies the length of the `name` member, in bytes.
     pub name_length: u32,
     /// Specifies a pointer to an array of `ODPISubscrMessageRow` structures representing the list
     /// of rows that were modified by the event which generated this notification.
     pub rows: *mut ODPISubscrMessageRow,
-    /// Specifies the number of structures available in the dpiSubscrMessageTable.rows member.
+    /// Specifies the number of structures available in the `rows` member.
     pub num_rows: u32,
 }
 
