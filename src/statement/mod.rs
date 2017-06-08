@@ -254,8 +254,10 @@ impl Statement {
 
     /// Returns the names of the unique bind variables in the prepared statement.
     pub fn get_bind_names(&self, num_bind_names: u32) -> Result<Vec<String>> {
-        let mut names_vec = Vec::with_capacity(num_bind_names as usize);
-        let mut names_len_vec = Vec::with_capacity(num_bind_names as usize);
+        let mut actual_num_bind_names = num_bind_names;
+        let mut names_vec: Vec<*const ::std::os::raw::c_char> = Vec::with_capacity(num_bind_names as
+                                                                                   usize);
+        let mut names_len_vec: Vec<u32> = Vec::with_capacity(num_bind_names as usize);
 
         for _ in 0..num_bind_names {
             names_vec.push(ptr::null());
@@ -263,20 +265,21 @@ impl Statement {
         }
 
         try_dpi!(externs::dpiStmt_getBindNames(self.inner,
-                                               num_bind_names,
+                                               &mut actual_num_bind_names,
                                                names_vec.as_mut_ptr(),
                                                names_len_vec.as_mut_ptr()),
                  {
-                     if names_vec.len() == names_len_vec.len() {
-                         let mut res = Vec::new();
-                         for (name, name_len) in names_vec.iter().zip(names_len_vec.iter()) {
+                     let mut res = Vec::new();
+
+                     for (idx, (name, name_len)) in
+                names_vec.iter().zip(names_len_vec.iter()).enumerate() {
+                         if idx <= actual_num_bind_names as usize {
                              let name_s = ODPIStr::new(*name, *name_len);
                              res.push(name_s.into());
                          }
-                         Ok(res)
-                     } else {
-                         Err(ErrorKind::Statement("".to_string()).into())
                      }
+
+                     Ok(res)
                  },
                  ErrorKind::Statement("dpiStmt_getBindNames".to_string()))
     }
@@ -478,6 +481,10 @@ mod test {
                                     None,
                                     false)?;
         let username_var = conn.new_var(Varchar, Bytes, 1, 256, false, false)?;
+        username_var.set_from_bytes(0, "jozias")?;
+
+        let bind_count = bbn.get_bind_count()?;
+        assert_eq!(bind_count, 1);
         bbn.bind_by_name(":username", &username_var)?;
         let mut cols = bbn.execute(flags::EXEC_DEFAULT)?;
         assert_eq!(cols, 2);
@@ -506,6 +513,7 @@ mod test {
         cols = bbvn.execute(flags::EXEC_DEFAULT)?;
         assert_eq!(cols, 2);
 
+
         let bbvp = conn.prepare_stmt(Some("select * from username where username = :username"),
                                      None,
                                      false)?;
@@ -514,11 +522,56 @@ mod test {
         cols = bbvp.execute(flags::EXEC_DEFAULT)?;
         assert_eq!(cols, 2);
 
+        let fetch = conn.prepare_stmt(Some("select * from username where username = :username"),
+                                      None,
+                                      false)?;
+        fetch.bind_by_pos(1, &username_var)?;
+        cols = fetch.execute(flags::EXEC_DEFAULT)?;
+        assert_eq!(cols, 2);
+        let (found, buffer_row_index) = fetch.fetch()?;
+        assert!(found);
+        assert_eq!(buffer_row_index, 0);
+
+
+        let fetch_rows = conn.prepare_stmt(
+            Some(
+                "select * from username \
+                 where username = :username",
+            ),
+            None,
+            false,
+        )?;
+        fetch_rows.bind_by_pos(1, &username_var)?;
+        cols = fetch_rows.execute(flags::EXEC_DEFAULT)?;
+        assert_eq!(cols, 2);
+        let (buffer_row_index, num_rows_fetched, more_rows) = fetch_rows.fetch_rows(10)?;
+        assert_eq!(buffer_row_index, 0);
+        assert_eq!(num_rows_fetched, 1);
+        assert!(!more_rows);
+
+        let bn = conn.prepare_stmt(Some("insert into username values (:id, :username)"),
+                                   None,
+                                   false)?;
+        let names = bn.get_bind_names(2)?;
+        assert!(names.len() == 2);
+        for (idx, name) in names.iter().enumerate() {
+            match idx {
+                0 => assert!(name == "ID"),
+                1 => assert!(name == "USERNAME"),
+                _ => assert!(false),
+            }
+        }
+
         dual.close(None)?;
         bbn.close(None)?;
         bbp.close(None)?;
         bbvn.close(None)?;
         bbvp.close(None)?;
+        fetch.close(None)?;
+        fetch_rows.close(None)?;
+        bn.close(None)?;
+
+        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
 
         Ok(())
     }
@@ -609,63 +662,6 @@ mod test {
     // }
 
     // #[test]
-    // fn fetch() {
-    //     let conn = match *CONN {
-    //         ConnResult::Ok(ref conn) => conn,
-    //         ConnResult::Err(ref _e) => return assert!(false),
-    //     };
-    //     match conn.prepare_stmt(Some("select * from username where username = 'jozias'"),
-    //                             None,
-    //                             false) {
-    //         Ok(stmt) => {
-    //             match stmt.execute(flags::EXEC_DEFAULT) {
-    //                 Ok(cols) => {
-    //                     assert!(cols == 2);
-    //                     match stmt.fetch() {
-    //                         Ok((found, buffer_row_index)) => {
-    //                             assert!(found);
-    //                             assert!(buffer_row_index == 0);
-    //                         }
-    //                         Err(_e) => assert!(false),
-    //                     }
-    //                 }
-    //                 Err(_e) => assert!(false),
-    //             }
-    //         }
-    //         Err(_e) => assert!(false),
-    //     }
-    // }
-
-    // #[test]
-    // fn fetch_rows() {
-    //     let conn = match *CONN {
-    //         ConnResult::Ok(ref conn) => conn,
-    //         ConnResult::Err(ref _e) => return assert!(false),
-    //     };
-    //     match conn.prepare_stmt(Some("select * from username where username like 'jozia%'"),
-    //                             None,
-    //                             false) {
-    //         Ok(stmt) => {
-    //             match stmt.execute(flags::EXEC_DEFAULT) {
-    //                 Ok(cols) => {
-    //                     assert!(cols == 2);
-    //                     match stmt.fetch_rows(10) {
-    //                         Ok((buffer_row_index, num_rows_fetched, more_rows)) => {
-    //                             assert!(!more_rows);
-    //                             assert!(buffer_row_index == 0);
-    //                             assert!(num_rows_fetched == 4);
-    //                         }
-    //                         Err(_e) => assert!(false),
-    //                     }
-    //                 }
-    //                 Err(_e) => assert!(false),
-    //             }
-    //         }
-    //         Err(_e) => assert!(false),
-    //     }
-    // }
-
-    // #[test]
     // fn get_batch_error_count() {
     //     let conn = match *CONN {
     //         ConnResult::Ok(ref conn) => conn,
@@ -681,25 +677,6 @@ mod test {
     //             }
     //         }
     //         Err(_e) => assert!(false),
-    //     }
-    // }
-
-    // #[test]
-    // fn get_bind_count() {
-    //     let conn = match *CONN {
-    //         ConnResult::Ok(ref conn) => conn,
-    //         ConnResult::Err(ref _e) => return assert!(false),
-    //     };
-
-    //     let stmt =
-    //         match conn.prepare_stmt(Some("insert into username values (:1, :2)"), None, false) {
-    //             Ok(stmt) => stmt,
-    //             Err(e) => return ::test::error_info(e),
-    //         };
-
-    //     match stmt.get_bind_count() {
-    //         Ok(count) => assert!(count == 2),
-    //         Err(e) => return ::test::error_info(e),
     //     }
     // }
 

@@ -536,7 +536,7 @@ extern "C" {
                                 count: *mut u32)
                                 -> ::std::os::raw::c_int;
     pub fn dpiStmt_getBindNames(stmt: *mut opaque::ODPIStmt,
-                                numBindNames: u32,
+                                numBindNames: *mut u32,
                                 bindNames: *mut *const ::std::os::raw::c_char,
                                 bindNameLengths: *mut u32)
                                 -> ::std::os::raw::c_int;
