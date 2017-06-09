@@ -154,13 +154,17 @@ impl Lob {
     }
 
     /// Reads data from the LOB at the specified offset into the provided buffer.
+    #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_truncation))]
     pub fn read_bytes(&self, offset: u64, length: u64) -> Result<Vec<i8>> {
-        let buffer = Vec::new();
-        let buf_ptr = buffer.as_ptr() as *mut i8;
+        let mut buffer: Vec<i8> = Vec::with_capacity(length as usize);
+        let buf_ptr = buffer.as_mut_ptr();
         let mut buf_len = length;
 
         try_dpi!(externs::dpiLob_readBytes(self.inner, offset, length, buf_ptr, &mut buf_len),
-                 Ok(buffer),
+                 {
+                     unsafe { buffer.set_len(buf_len as usize) };
+                     Ok(buffer)
+                 },
                  ErrorKind::Lob("dpiLob_readBytes".to_string()))
 
     }
@@ -195,7 +199,7 @@ impl Lob {
     /// first be cleared and then the provided data will be written.
     ///
     /// * `buffer` - the buffer from which the data is written.
-    pub fn set_from_bytes(&self, buffer: Vec<i8>) -> Result<()> {
+    pub fn set_from_bytes(&self, buffer: &[i8]) -> Result<()> {
         let buf_ptr = buffer.as_ptr();
         let buf_len = buffer.len() as u64;
         try_dpi!(externs::dpiLob_setFromBytes(self.inner, buf_ptr, buf_len),
@@ -221,7 +225,7 @@ impl Lob {
     /// * `offset` - the offset into the LOB data from which to start writing. The first position is
     /// 1. For character LOBs this represents the number of characters from the beginning of the
     /// LOB; for binary LOBS, this represents the number of bytes from the beginning of the LOB.
-    pub fn write_bytes(&self, buffer: Vec<i8>, offset: u64) -> Result<()> {
+    pub fn write_bytes(&self, buffer: &[i8], offset: u64) -> Result<()> {
         let buf_ptr = buffer.as_ptr();
         let buf_len = buffer.len() as u64;
 
@@ -264,25 +268,40 @@ mod test {
 
         conn.add_ref()?;
 
-        let temp_lob = conn.new_temp_lob(Clob)?;
+        let temp_lob = conn.new_temp_lob(Blob)?;
         temp_lob.add_ref()?;
 
         let size_in_bytes = temp_lob.get_buffer_size(1024)?;
-        assert_eq!(size_in_bytes, 4096);
+        assert_eq!(size_in_bytes, 1024);
         let chunk_size = temp_lob.get_chunk_size()?;
         assert_eq!(chunk_size, 8132);
-        // let (dir, filename) = temp_lob.get_directory_and_filename()?;
-        // assert_eq!(dir, "");
-        // assert_eq!(filename, "");
-        // let file_exists = temp_lob.get_file_exists()?;
-        // assert!(!file_exists);
+
+        temp_lob.open_resource()?;
+        let is_open = temp_lob.get_is_resource_open()?;
+        assert!(is_open);
+
+        let mut buffer: Vec<i8> = ::std::iter::repeat(0).take(8132).collect();
+        temp_lob.write_bytes(&buffer, 1)?;
+
+        let size = temp_lob.get_size()?;
+        assert_eq!(size, 8132);
+
+        buffer.clear();
+        buffer = ::std::iter::repeat(1).take(8132).collect();
+        temp_lob.write_bytes(&buffer, 8133)?;
+
+        let size = temp_lob.get_size()?;
+        assert_eq!(size, 16264);
+
+        let outbuf = temp_lob.read_bytes(8132, 2)?;
+        assert_eq!(outbuf, [0, 1]);
+
+        temp_lob.close_resource()?;
         let is_open = temp_lob.get_is_resource_open()?;
         assert!(!is_open);
-        let size = temp_lob.get_size()?;
-        assert_eq!(size, 0);
+
 
         temp_lob.release()?;
-
         conn.release()?;
         conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
 
