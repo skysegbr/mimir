@@ -50,12 +50,16 @@ error_chain! {
             display("LOB: call to '{}' function failed!", fn_name)
         }
         MsgProps(fn_name: String) {
-            description("Context: call to ODPI-C function failed!")
-            display("Context: call to '{}' function failed!", fn_name)
-        }
-        ObjectType(fn_name: String) {
             description("MsgProps: call to ODPI-C function failed!")
             display("MsgProps: call to '{}' function failed!", fn_name)
+        }
+        Object(fn_name: String) {
+            description("Object: call to ODPI-C function failed!")
+            display("Object: call to '{}' function failed!", fn_name)
+        }
+        ObjectType(fn_name: String) {
+            description("ObjectType: call to ODPI-C function failed!")
+            display("ObjectType: call to '{}' function failed!", fn_name)
         }
         OciError(err: Info) {
             description("OCI Error!")

@@ -420,6 +420,11 @@ extern "C" {
 }
 
 extern "C" {
+    pub fn dpiObject_addRef(obj: *mut opaque::ODPIObject) -> ::std::os::raw::c_int;
+    pub fn dpiObject_release(obj: *mut opaque::ODPIObject) -> ::std::os::raw::c_int;
+}
+
+extern "C" {
     pub fn dpiObjectType_addRef(objType: *mut opaque::ODPIObjectType) -> ::std::os::raw::c_int;
 }
 
