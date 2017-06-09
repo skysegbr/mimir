@@ -321,6 +321,7 @@ mod test {
         let enc_cstr = CString::new("UTF-8").expect("badness");
         ccp.set_encoding(enc_cstr.as_ptr());
         ccp.set_nchar_encoding(enc_cstr.as_ptr());
+        ccp.set_create_mode(flags::DPI_MODE_CREATE_EVENTS);
 
         let conn = Connection::create(&ctxt,
                                       Some(&CREDS[0]),
