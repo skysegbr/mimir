@@ -19,9 +19,13 @@ use util::ODPIStr;
 /// This structure is used for holding Oracle year to month interval data information.
 #[derive(Default, Getters, Setters)]
 pub struct YearsMonths {
-    #[get = "pub"] #[set = "pub"]
+    /// The years in an Oracle YEARS TO MONTHS interval.
+    #[get = "pub"]
+    #[set = "pub"]
     years: i32,
-    #[get = "pub"] #[set = "pub"]
+    /// The months in an Oracle YEARS TO MONTHS interval.
+    #[get = "pub"]
+    #[set = "pub"]
     months: i32,
 }
 
