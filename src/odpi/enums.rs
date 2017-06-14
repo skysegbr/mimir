@@ -7,6 +7,8 @@
 // modified, or distributed except according to those terms.
 
 //! ODPI-C public enums
+use std::fmt;
+
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 /// This enumeration identifies the modes that are possible when dequeuing messages from a queue.
@@ -171,6 +173,28 @@ impl From<i32> for ODPINativeTypeNum {
             3012 => ODPINativeTypeNum::Rowid,
             _ => ODPINativeTypeNum::Invalid,
         }
+    }
+}
+
+impl fmt::Display for ODPINativeTypeNum {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let desc = match *self {
+            ODPINativeTypeNum::Int64 => "Int64",
+            ODPINativeTypeNum::Uint64 => "Uint64",
+            ODPINativeTypeNum::Float => "Float",
+            ODPINativeTypeNum::Double => "Double",
+            ODPINativeTypeNum::Bytes => "Bytes",
+            ODPINativeTypeNum::Timestamp => "Timestamp",
+            ODPINativeTypeNum::IntervalDS => "IntervalDS",
+            ODPINativeTypeNum::IntervalYM => "IntervalYM",
+            ODPINativeTypeNum::Lob => "LOB",
+            ODPINativeTypeNum::Object => "Object",
+            ODPINativeTypeNum::Stmt => "Stmt",
+            ODPINativeTypeNum::Boolean => "Boolean",
+            ODPINativeTypeNum::Rowid => "Rowid",
+            ODPINativeTypeNum::Invalid => "Invalid",
+        };
+        writeln!(f, "{}", desc)
     }
 }
 
