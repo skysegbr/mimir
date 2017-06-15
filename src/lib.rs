@@ -65,10 +65,18 @@ mod test {
         pub static ref CREDS: Vec<String> = {
             let file = File::open(".creds/oic-test")
                 .expect("bad creds");
-            let mut buf_reader = BufReader::new(file);
-            let mut creds = String::new();
-            let _ = buf_reader.read_line(&mut creds).expect("bad creds");
-            creds.split(":").map(|x| x.trim_right().to_string()).collect()
+            let buf_reader = BufReader::new(file);
+            let mut creds = Vec::new();
+
+            for line_res in buf_reader.lines() {
+                if let Ok(line) = line_res {
+                    let parts = line.split(":").map(|x| {
+                        x.trim_right().to_string()
+                    }).collect::<Vec<String>>();
+                    creds.extend(parts);
+                }
+            }
+            creds
         };
     }
 }

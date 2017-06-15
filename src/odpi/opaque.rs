@@ -50,6 +50,12 @@ pub struct ODPIObject([u8; 0]);
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
+/// This structure represents attributes of the types created by the SQL command CREATE OR REPLACE
+/// TYPE and is available by handle to a calling application or driver.
+pub struct ODPIObjectAttr([u8; 0]);
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
 /// This structure represents types such as those created by the SQL command CREATE OR REPLACE TYPE
 /// and is available by handle to a calling application or driver.
 pub struct ODPIObjectType([u8; 0]);

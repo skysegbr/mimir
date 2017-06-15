@@ -426,6 +426,17 @@ extern "C" {
 
 extern "C" {
     pub fn dpiObjectType_addRef(objType: *mut opaque::ODPIObjectType) -> ::std::os::raw::c_int;
+    pub fn dpiObjectType_release(objType: *mut opaque::ODPIObjectType) -> ::std::os::raw::c_int;
+    pub fn dpiObjectType_createObject(objType: *mut opaque::ODPIObjectType,
+                                      obj: *mut *mut opaque::ODPIObject)
+                                      -> ::std::os::raw::c_int;
+    pub fn dpiObjectType_getAttributes(objType: *mut opaque::ODPIObjectType,
+                                       numAttributes: u16,
+                                       attributes: *mut *mut opaque::ODPIObjectAttr)
+                                       -> ::std::os::raw::c_int;
+    pub fn dpiObjectType_getInfo(objType: *mut opaque::ODPIObjectType,
+                                 info: *mut structs::ODPIObjectTypeInfo)
+                                 -> ::std::os::raw::c_int;
 }
 
 extern "C" {

@@ -428,6 +428,22 @@ pub struct ODPIObjectTypeInfo {
     pub num_attributes: u16,
 }
 
+impl Default for ODPIObjectTypeInfo {
+    fn default() -> ODPIObjectTypeInfo {
+        ODPIObjectTypeInfo {
+            schema: ptr::null(),
+            schema_length: 0,
+            name: ptr::null(),
+            name_length: 0,
+            is_collection: 0,
+            element_oracle_type_num: enums::ODPIOracleTypeNum::TypeNone,
+            element_default_native_type_num: enums::ODPINativeTypeNum::Invalid,
+            element_object_type: ptr::null_mut(),
+            num_attributes: 0,
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 /// This structure is used for creating session pools, which can in turn be used to create
