@@ -221,6 +221,15 @@ pub struct ODPIData {
     pub value: ODPIDataValueUnion,
 }
 
+impl Default for ODPIData {
+    fn default() -> ODPIData {
+        ODPIData {
+            is_null: 1,
+            value: ODPIDataValueUnion { as_boolean: 0 },
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[cfg_attr(rustfmt, rustfmt_skip)]

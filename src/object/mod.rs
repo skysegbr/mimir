@@ -15,12 +15,13 @@
 //! `Object::release()`. All of the attributes of the structure `ODPIBaseType` are included in this
 //! structure in addition to the ones specific to this structure described below.
 use error::{ErrorKind, Result};
-use odpi::externs;
+use objectattr::ObjectAttr;
+use odpi::{externs, structs};
 use odpi::opaque::ODPIObject;
 
 /// This structure represents instances of the types created by the SQL command CREATE OR REPLACE
 /// TYPE
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Object {
     /// The ODPI-C Object pointer.
     pub inner: *mut ODPIObject,
@@ -42,6 +43,23 @@ impl Object {
                  ErrorKind::Object("dpiObject_addRef".to_string()))
     }
 
+    /// Returns the value of one of the object's attributes.
+    pub fn get_attribute_value(&self,
+                               attr: &ObjectAttr,
+                               info: &structs::ODPIObjectAttrInfo)
+                               -> Result<structs::ODPIData> {
+        let mut data_blah: structs::ODPIData = Default::default();
+
+        try_dpi!(externs::dpiObject_getAttributeValue(self.inner,
+                                                      attr.inner(),
+                                                      info.default_native_type_num,
+                                                      &mut data_blah),
+                 {
+                     Ok(data_blah)
+                 },
+                 ErrorKind::Object("dpiObject_getAttributeValue".to_string()))
+    }
+
     /// Releases a reference to the object. A count of the references to the object is maintained
     /// and when this count reaches zero, the memory associated with the object is freed.
     pub fn release(&self) -> Result<()> {
@@ -54,62 +72,5 @@ impl Object {
 impl From<*mut ODPIObject> for Object {
     fn from(inner: *mut ODPIObject) -> Object {
         Object { inner: inner }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    // use chrono::{Datelike, UTC, Timelike};
-    use connection::Connection;
-    use context::Context;
-    use error::Result;
-    use odpi::flags;
-    // use odpi::enums::ODPIMessageDeliveryMode::*;
-    // use odpi::enums::ODPIMessageState::*;
-    use std::ffi::CString;
-    use test::CREDS;
-
-    fn within_context(ctxt: &Context) -> Result<()> {
-        let mut ccp = ctxt.init_common_create_params()?;
-        let enc_cstr = CString::new("UTF-8").expect("badness");
-        ccp.set_encoding(enc_cstr.as_ptr());
-        ccp.set_nchar_encoding(enc_cstr.as_ptr());
-        ccp.set_create_mode(flags::DPI_MODE_CREATE_EVENTS);
-
-        let conn = Connection::create(ctxt,
-                                      Some(&CREDS[0]),
-                                      Some(&CREDS[1]),
-                                      Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
-                                      Some(ccp),
-                                      None)?;
-        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
-
-        Ok(())
-    }
-
-    fn object_res() -> Result<()> {
-        use std::io::{self, Write};
-
-        let ctxt = Context::create()?;
-        match within_context(&ctxt) {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                writeln!(io::stderr(), "{}", ctxt.get_error())?;
-                Err(e)
-            }
-        }
-    }
-
-    #[test]
-    fn object() {
-        use std::io::{self, Write};
-
-        match object_res() {
-            Ok(_) => assert!(true),
-            Err(e) => {
-                writeln!(io::stderr(), "{}", e).expect("badness");
-                assert!(false);
-            }
-        }
     }
 }

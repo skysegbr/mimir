@@ -13,6 +13,7 @@
 //! to process macros. For this reason, none of these functions perform any error checking. They are
 //! assumed to be replacements for direct manipulation of the various members of the structure.
 use chrono::{DateTime, Duration, TimeZone, UTC};
+use odpi::opaque;
 use odpi::structs::{ODPIData, ODPIDataValueUnion};
 use util::ODPIStr;
 
@@ -31,6 +32,7 @@ pub struct YearsMonths {
 
 /// This structure is used for passing data to and from the database for variables and for
 /// manipulating object attributes and collection values.
+#[derive(Debug)]
 pub struct Data {
     /// The ODPI-C data pointer.
     inner: *mut ODPIData,
@@ -76,6 +78,11 @@ impl Data {
     /// Get the value as a `f64` when the native type is DPI_NATIVE_TYPE_DOUBLE.
     pub fn as_double(&self) -> f64 {
         unsafe { (*self.inner).value.as_double }
+    }
+
+    /// Returns the value of the data when the native type is DPI_NATIVE_TYPE_OBJECT.
+    pub fn as_object(&self) -> *mut opaque::ODPIObject {
+        unsafe { (*self.inner).value.as_object }
     }
 
     /// Get the value as a `String` when the native type is DPI_NATIVE_TYPE_BYTES.

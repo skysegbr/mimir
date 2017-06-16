@@ -194,7 +194,7 @@ impl fmt::Display for ODPINativeTypeNum {
             ODPINativeTypeNum::Rowid => "Rowid",
             ODPINativeTypeNum::Invalid => "Invalid",
         };
-        writeln!(f, "{}", desc)
+        write!(f, "{}", desc)
     }
 }
 

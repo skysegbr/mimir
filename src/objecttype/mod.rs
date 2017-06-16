@@ -6,7 +6,6 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-//! [NOT IMPL]
 //! Object type handles are used to represent types such as those created by the SQL command CREATE
 //! OR REPLACE TYPE. They are created using the function `Connection::get_object_type()` or
 //! implicitly when fetching from a column containing objects by calling the function
@@ -55,7 +54,6 @@ impl ObjectType {
     }
 
     /// Returns the list of attributes that belong to the object type.
-    /// TODO: Create array when ObjectAttribute is finished.
     pub fn get_attributes(&self, length: u16) -> Result<Vec<*mut ODPIObjectAttr>> {
         let mut buffer: Vec<*mut ODPIObjectAttr> = Vec::with_capacity(length as usize);
         let buf_ptr = buffer.as_mut_ptr();
@@ -95,11 +93,13 @@ impl From<*mut ODPIObjectType> for ObjectType {
 
 #[cfg(test)]
 mod test {
+    use chrono::{TimeZone, UTC};
     use connection::Connection;
     use context::Context;
+    use data::Data;
     use error::Result;
+    use object::Object;
     use objectattr::ObjectAttr;
-    // use odpi::enums::ODPIOracleTypeNum::*;
     use odpi::enums::ODPINativeTypeNum::*;
     use odpi::flags;
     use std::ffi::CString;
@@ -131,14 +131,13 @@ mod test {
         let cols = object_col.execute(flags::EXEC_DEFAULT)?;
         assert_eq!(cols, 1);
 
-        object_col.fetch()?;
-
         let query_info = object_col.get_query_info(1)?;
         assert!(query_info.object_type().is_some());
 
         if let Some(object_type) = query_info.object_type() {
             let attrs = object_type.get_attributes(7)?;
             let mut obj_attrs = Vec::new();
+            let mut attr_infos = Vec::new();
 
             for (idx, obj_attr) in attrs.iter().enumerate() {
                 let attr: ObjectAttr = (*obj_attr).into();
@@ -156,6 +155,7 @@ mod test {
                     _ => assert!(false),
                 }
                 obj_attrs.push(attr);
+                attr_infos.push(attr_info);
             }
 
             let type_info = object_type.get_info()?;
@@ -171,6 +171,66 @@ mod test {
             assert_eq!(type_info.element_default_native_type_num, Invalid);
             assert!(type_info.element_object_type.is_null());
             assert_eq!(type_info.num_attributes, 7);
+
+            object_col.fetch()?;
+
+            // Create an object of this type.
+            let created_obj = object_type.create()?;
+            let created: Object = created_obj.into();
+            println!("Created: {:?}", created);
+
+            // Get the object value out of the query.
+            let (object_col_type, object_col_ptr) = object_col.get_query_value(1)?;
+            assert_eq!(object_col_type, Object);
+            let data: Data = object_col_ptr.into();
+            let obj: Object = data.as_object().into();
+
+            for (idx, (obj_attr, attr_info)) in
+                obj_attrs.iter().zip(attr_infos.iter()).enumerate() {
+                let attr_data = obj.get_attribute_value(obj_attr, attr_info)?;
+                match attr_info.default_native_type_num {
+                    Bytes => {
+                        let data_bytes = unsafe { attr_data.value.as_bytes };
+                        let o_str = ODPIStr::new(data_bytes.ptr, data_bytes.length);
+                        let data_str: String = o_str.into();
+                        if idx == 1 {
+                            assert_eq!(data_str, "First row");
+                        } else if idx == 2 {
+                            assert_eq!(data_str, "First     ");
+                        } else {
+                            assert!(false);
+                        }
+                    }
+                    Double => {
+                        if idx == 0 {
+                            assert_eq!(unsafe { attr_data.value.as_double }, 1.0);
+                        } else {
+                            assert!(false);
+                        }
+                    }
+                    Timestamp => {
+                        let odpi_ts = unsafe { attr_data.value.as_timestamp };
+                        let y = odpi_ts.year as i32;
+                        let m = odpi_ts.month as u32;
+                        let d = odpi_ts.day as u32;
+                        let h = odpi_ts.hour as u32;
+                        let mi = odpi_ts.minute as u32;
+                        let s = odpi_ts.second as u32;
+                        let ts = UTC.ymd(y, m, d).and_hms_nano(h, mi, s, odpi_ts.fsecond);
+
+                        if idx == 3 {
+                            let expected = UTC.ymd(2007, 3, 6).and_hms_nano(0, 0, 0, 0);
+                            assert_eq!(ts, expected);
+                        } else if idx == 4 {
+                            let expected = UTC.ymd(2008, 9, 12).and_hms_nano(16, 40, 0, 0);
+                            assert_eq!(ts, expected);
+                        } else {
+                            assert!(false);
+                        }
+                    }
+                    _ => {}
+                }
+            }
 
             for obj_attr in obj_attrs {
                 obj_attr.release()?;
