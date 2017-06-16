@@ -395,7 +395,19 @@ pub struct ODPIObjectAttrInfo {
     pub default_native_type_num: enums::ODPINativeTypeNum,
     /// Specifies a reference to the object type of the attribute, if the attribute refers to a
     /// named type; otherwise it is NULL.
-    pub object_ype: *mut opaque::ODPIObjectType,
+    pub object_type: *mut opaque::ODPIObjectType,
+}
+
+impl Default for ODPIObjectAttrInfo {
+    fn default() -> ODPIObjectAttrInfo {
+        ODPIObjectAttrInfo {
+            name: ptr::null(),
+            name_length: 0,
+            oracle_type_num: enums::ODPIOracleTypeNum::Max,
+            default_native_type_num: enums::ODPINativeTypeNum::Invalid,
+            object_type: ptr::null_mut(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -436,7 +448,7 @@ impl Default for ODPIObjectTypeInfo {
             name: ptr::null(),
             name_length: 0,
             is_collection: 0,
-            element_oracle_type_num: enums::ODPIOracleTypeNum::TypeNone,
+            element_oracle_type_num: enums::ODPIOracleTypeNum::Max,
             element_default_native_type_num: enums::ODPINativeTypeNum::Invalid,
             element_object_type: ptr::null_mut(),
             num_attributes: 0,

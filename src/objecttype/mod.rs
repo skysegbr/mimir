@@ -17,7 +17,7 @@
 use error::{ErrorKind, Result};
 use object::Object;
 use odpi::externs;
-use odpi::opaque::{ODPIObject, ODPIObjectType};
+use odpi::opaque::{ODPIObject, ODPIObjectAttr, ODPIObjectType};
 use odpi::structs::ODPIObjectTypeInfo;
 use std::ptr;
 
@@ -56,11 +56,15 @@ impl ObjectType {
 
     /// Returns the list of attributes that belong to the object type.
     /// TODO: Create array when ObjectAttribute is finished.
-    pub fn get_attributes(&self, num: u16) -> Result<()> {
-        let mut object_attr_arr = ptr::null_mut();
+    pub fn get_attributes(&self, length: u16) -> Result<Vec<*mut ODPIObjectAttr>> {
+        let mut buffer: Vec<*mut ODPIObjectAttr> = Vec::with_capacity(length as usize);
+        let buf_ptr = buffer.as_mut_ptr();
 
-        try_dpi!(externs::dpiObjectType_getAttributes(self.inner, num, &mut object_attr_arr),
-                 Ok(()),
+        try_dpi!(externs::dpiObjectType_getAttributes(self.inner, length, buf_ptr),
+                 {
+                     unsafe { buffer.set_len(length as usize) };
+                     Ok(buffer)
+                 },
                  ErrorKind::ObjectType("dpiObjectType_getAttributes".to_string()))
     }
 
@@ -94,13 +98,15 @@ mod test {
     use connection::Connection;
     use context::Context;
     use error::Result;
+    use objectattr::ObjectAttr;
+    // use odpi::enums::ODPIOracleTypeNum::*;
+    use odpi::enums::ODPINativeTypeNum::*;
     use odpi::flags;
     use std::ffi::CString;
     use test::CREDS;
     use util::ODPIStr;
 
     fn within_context(ctxt: &Context) -> Result<()> {
-        use std::io::{self, Write};
         let mut ccp = ctxt.init_common_create_params()?;
         let enc_cstr = CString::new("UTF-8").expect("badness");
         ccp.set_encoding(enc_cstr.as_ptr());
@@ -125,21 +131,56 @@ mod test {
         let cols = object_col.execute(flags::EXEC_DEFAULT)?;
         assert_eq!(cols, 1);
 
+        object_col.fetch()?;
+
         let query_info = object_col.get_query_info(1)?;
         assert!(query_info.object_type().is_some());
 
         if let Some(object_type) = query_info.object_type() {
+            let attrs = object_type.get_attributes(7)?;
+            let mut obj_attrs = Vec::new();
+
+            for (idx, obj_attr) in attrs.iter().enumerate() {
+                let attr: ObjectAttr = (*obj_attr).into();
+                let attr_info = attr.get_info()?;
+                let name_s = ODPIStr::new(attr_info.name, attr_info.name_length);
+                let name: String = name_s.into();
+                match idx {
+                    0 => assert_eq!(name, "NUMBERVALUE"),
+                    1 => assert_eq!(name, "STRINGVALUE"),
+                    2 => assert_eq!(name, "FIXEDCHARVALUE"),
+                    3 => assert_eq!(name, "DATEVALUE"),
+                    4 => assert_eq!(name, "TIMESTAMPVALUE"),
+                    5 => assert_eq!(name, "SUBOBJECTVALUE"),
+                    6 => assert_eq!(name, "SUBOBJECTARRAY"),
+                    _ => assert!(false),
+                }
+                obj_attrs.push(attr);
+            }
+
             let type_info = object_type.get_info()?;
             let schema = ODPIStr::new(type_info.schema, type_info.schema_length);
             let name = ODPIStr::new(type_info.name, type_info.name_length);
             let schema_str: String = schema.into();
             let name_str: String = name.into();
-            writeln!(io::stderr(), "{}:{}", schema_str, name_str)?;
+
+            assert_eq!(schema_str, "ODPIC");
+            assert_eq!(name_str, "UDT_OBJECT");
+            assert_eq!(type_info.is_collection, 0);
+            // assert_eq!(type_info.element_oracle_type_num, Max);
+            assert_eq!(type_info.element_default_native_type_num, Invalid);
+            assert!(type_info.element_object_type.is_null());
+            assert_eq!(type_info.num_attributes, 7);
+
+            for obj_attr in obj_attrs {
+                obj_attr.release()?;
+            }
         }
 
         object_col.close(None)?;
-        conn.release()?;
         conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
+        object_col.release()?;
+        conn.release()?;
 
         Ok(())
     }

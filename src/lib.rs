@@ -41,6 +41,7 @@ pub mod error;
 pub mod lob;
 pub mod message;
 pub mod object;
+pub mod objectattr;
 pub mod objecttype;
 pub mod pool;
 pub mod query;
