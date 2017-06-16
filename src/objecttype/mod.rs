@@ -22,6 +22,7 @@ use std::ptr;
 
 /// Object type handles are used to represent types such as those created by the SQL command CREATE
 /// OR REPLACE TYPE.
+#[derive(Debug)]
 pub struct ObjectType {
     /// A pointer to the opaque `ODPIObjectType`.
     inner: *mut ODPIObjectType,
@@ -100,6 +101,8 @@ mod test {
     use error::Result;
     use object::Object;
     use objectattr::ObjectAttr;
+    use objecttype::ObjectType;
+    use odpi::enums;
     use odpi::enums::ODPINativeTypeNum::*;
     use odpi::flags;
     use std::ffi::CString;
@@ -176,8 +179,10 @@ mod test {
 
             // Create an object of this type.
             let created_obj = object_type.create()?;
-            let created: Object = created_obj.into();
-            println!("Created: {:?}", created);
+            let _created: Object = created_obj.into();
+            // let (first_idx, exists) = created.get_first_index()?;
+            // assert_eq!(first_idx, 0);
+            // assert_eq!(exists, 1);
 
             // Get the object value out of the query.
             let (object_col_type, object_col_ptr) = object_col.get_query_value(1)?;
@@ -228,7 +233,55 @@ mod test {
                             assert!(false);
                         }
                     }
-                    _ => {}
+                    Object => {
+                        let nested_obj_type_ptr = attr_info.object_type;
+
+                        if nested_obj_type_ptr.is_null() {
+                            assert!(false);
+                        } else {
+                            let nested_obj_type: ObjectType = nested_obj_type_ptr.into();
+                            let type_info = nested_obj_type.get_info()?;
+                            let schema = ODPIStr::new(type_info.schema, type_info.schema_length);
+                            let name = ODPIStr::new(type_info.name, type_info.name_length);
+                            let schema_str: String = schema.into();
+                            let name_str: String = name.into();
+
+                            let odpi_obj_ptr = unsafe { attr_data.value.as_object };
+                            let odpi_obj: Object = odpi_obj_ptr.into();
+
+                            assert_eq!(schema_str, "ODPIC");
+                            if idx == 5 {
+                                assert_eq!(name_str, "UDT_SUBOBJECT");
+                                assert_eq!(type_info.is_collection, 0);
+                                assert_eq!(type_info.num_attributes, 2);
+                            } else if idx == 6 {
+                                assert_eq!(name_str, "UDT_OBJECTARRAY");
+                                assert_eq!(type_info.is_collection, 1);
+                                assert_eq!(type_info.element_oracle_type_num,
+                                           enums::ODPIOracleTypeNum::Object);
+                                assert_eq!(type_info.element_default_native_type_num, Object);
+                                assert!(!type_info.element_object_type.is_null());
+                                let arr_obj_type: ObjectType = type_info.element_object_type.into();
+                                let type_info = arr_obj_type.get_info()?;
+                                let schema = ODPIStr::new(type_info.schema,
+                                                          type_info.schema_length);
+                                let name = ODPIStr::new(type_info.name, type_info.name_length);
+                                let schema_str: String = schema.into();
+                                let name_str: String = name.into();
+
+                                assert_eq!(schema_str, "ODPIC");
+                                assert_eq!(name_str, "UDT_SUBOBJECT");
+                                assert_eq!(type_info.is_collection, 0);
+                                assert_eq!(type_info.num_attributes, 2);
+
+                                let (first_index, _exists) = odpi_obj.get_first_index()?;
+                                assert_eq!(first_index, 0);
+                            }
+                        }
+                    }
+                    _ => {
+                        assert!(false);
+                    }
                 }
             }
 

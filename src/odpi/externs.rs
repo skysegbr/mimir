@@ -426,6 +426,10 @@ extern "C" {
                                        nativeTypeNum: enums::ODPINativeTypeNum,
                                        value: *mut structs::ODPIData)
                                        -> ::std::os::raw::c_int;
+    pub fn dpiObject_getFirstIndex(obj: *mut opaque::ODPIObject,
+                                   index: *mut i32,
+                                   exists: *mut ::std::os::raw::c_int)
+                                   -> ::std::os::raw::c_int;
     pub fn dpiObject_release(obj: *mut opaque::ODPIObject) -> ::std::os::raw::c_int;
 }
 

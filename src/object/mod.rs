@@ -60,6 +60,16 @@ impl Object {
                  ErrorKind::Object("dpiObject_getAttributeValue".to_string()))
     }
 
+    /// Returns the first index used in a collection.
+    pub fn get_first_index(&self) -> Result<(i32, i32)> {
+        let mut idx = 0;
+        let mut exists = 0;
+
+        try_dpi!(externs::dpiObject_getFirstIndex(self.inner, &mut idx, &mut exists),
+                 Ok((idx, exists)),
+                 ErrorKind::Object("dpiObject_getFirstIndex".to_string()))
+    }
+
     /// Releases a reference to the object. A count of the references to the object is maintained
     /// and when this count reaches zero, the memory associated with the object is freed.
     pub fn release(&self) -> Result<()> {
