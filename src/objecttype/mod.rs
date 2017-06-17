@@ -274,8 +274,9 @@ mod test {
                                 assert_eq!(type_info.is_collection, 0);
                                 assert_eq!(type_info.num_attributes, 2);
 
-                                let (first_index, _exists) = odpi_obj.get_first_index()?;
+                                let (first_index, exists) = odpi_obj.get_first_index()?;
                                 assert_eq!(first_index, 0);
+                                assert!(exists);
                             }
                         }
                     }

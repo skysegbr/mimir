@@ -61,12 +61,12 @@ impl Object {
     }
 
     /// Returns the first index used in a collection.
-    pub fn get_first_index(&self) -> Result<(i32, i32)> {
+    pub fn get_first_index(&self) -> Result<(i32, bool)> {
         let mut idx = 0;
         let mut exists = 0;
 
         try_dpi!(externs::dpiObject_getFirstIndex(self.inner, &mut idx, &mut exists),
-                 Ok((idx, exists)),
+                 Ok((idx, exists == 1)),
                  ErrorKind::Object("dpiObject_getFirstIndex".to_string()))
     }
 
