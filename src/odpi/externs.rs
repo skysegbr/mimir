@@ -421,16 +421,62 @@ extern "C" {
 
 extern "C" {
     pub fn dpiObject_addRef(obj: *mut opaque::ODPIObject) -> ::std::os::raw::c_int;
+    pub fn dpiObject_appendElement(obj: *mut opaque::ODPIObject,
+                                   nativeTypeNum: enums::ODPINativeTypeNum,
+                                   value: *mut structs::ODPIData)
+                                   -> ::std::os::raw::c_int;
+    pub fn dpiObject_copy(obj: *mut opaque::ODPIObject,
+                          copiedObj: *mut *mut opaque::ODPIObject)
+                          -> ::std::os::raw::c_int;
+    pub fn dpiObject_deleteElementByIndex(obj: *mut opaque::ODPIObject,
+                                          index: i32)
+                                          -> ::std::os::raw::c_int;
     pub fn dpiObject_getAttributeValue(obj: *mut opaque::ODPIObject,
                                        attr: *mut opaque::ODPIObjectAttr,
                                        nativeTypeNum: enums::ODPINativeTypeNum,
                                        value: *mut structs::ODPIData)
                                        -> ::std::os::raw::c_int;
+    pub fn dpiObject_getElementExistsByIndex(obj: *mut opaque::ODPIObject,
+                                             index: i32,
+                                             exists: *mut ::std::os::raw::c_int)
+                                             -> ::std::os::raw::c_int;
+    pub fn dpiObject_getElementValueByIndex(obj: *mut opaque::ODPIObject,
+                                            index: i32,
+                                            nativeTypeNum: enums::ODPINativeTypeNum,
+                                            value: *mut structs::ODPIData)
+                                            -> ::std::os::raw::c_int;
     pub fn dpiObject_getFirstIndex(obj: *mut opaque::ODPIObject,
                                    index: *mut i32,
                                    exists: *mut ::std::os::raw::c_int)
                                    -> ::std::os::raw::c_int;
+    pub fn dpiObject_getLastIndex(obj: *mut opaque::ODPIObject,
+                                  index: *mut i32,
+                                  exists: *mut ::std::os::raw::c_int)
+                                  -> ::std::os::raw::c_int;
+    pub fn dpiObject_getNextIndex(obj: *mut opaque::ODPIObject,
+                                  index: i32,
+                                  nextIndex: *mut i32,
+                                  exists: *mut ::std::os::raw::c_int)
+                                  -> ::std::os::raw::c_int;
+    pub fn dpiObject_getPrevIndex(obj: *mut opaque::ODPIObject,
+                                  index: i32,
+                                  prevIndex: *mut i32,
+                                  exists: *mut ::std::os::raw::c_int)
+                                  -> ::std::os::raw::c_int;
+    pub fn dpiObject_getSize(obj: *mut opaque::ODPIObject, size: *mut i32)
+                             -> ::std::os::raw::c_int;
     pub fn dpiObject_release(obj: *mut opaque::ODPIObject) -> ::std::os::raw::c_int;
+    pub fn dpiObject_setAttributeValue(obj: *mut opaque::ODPIObject,
+                                       attr: *mut opaque::ODPIObjectAttr,
+                                       nativeTypeNum: enums::ODPINativeTypeNum,
+                                       value: *mut structs::ODPIData)
+                                       -> ::std::os::raw::c_int;
+    pub fn dpiObject_setElementValueByIndex(obj: *mut opaque::ODPIObject,
+                                            index: i32,
+                                            nativeTypeNum: enums::ODPINativeTypeNum,
+                                            value: *mut structs::ODPIData)
+                                            -> ::std::os::raw::c_int;
+    pub fn dpiObject_trim(obj: *mut opaque::ODPIObject, numToTrim: u32) -> ::std::os::raw::c_int;
 }
 
 extern "C" {

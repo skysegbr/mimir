@@ -9,7 +9,7 @@
 //! [NOT IMPL]
 //! This structure is used to represent the unique identifier of a row in the database and is
 //! available by handle to a calling application or driver. Rowids cannot be created or set directly
-//! but are created implicitly when a variable of type DPI_ORACLE_TYPE_ROWID is created. They are
+//! but are created implicitly when a variable of type `DPI_ORACLE_TYPE_ROWID` is created. They are
 //! destroyed when the last reference is released by a call to the function `Rowid::release()`. All
 //! of the attributes of the structure `ODPIBaseType` are included in this structure in addition to
 //! the ones specific to this structure described below.

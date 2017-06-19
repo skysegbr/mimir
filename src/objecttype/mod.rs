@@ -277,6 +277,31 @@ mod test {
                                 let (first_index, exists) = odpi_obj.get_first_index()?;
                                 assert_eq!(first_index, 0);
                                 assert!(exists);
+
+                                let (last_index, exists) = odpi_obj.get_last_index()?;
+                                assert_eq!(last_index, 1);
+                                assert!(exists);
+
+                                let (next_index, exists) = odpi_obj.get_next_index(0)?;
+                                assert_eq!(next_index, 1);
+                                assert!(exists);
+                                let (next_index_1, exists_1) = odpi_obj.get_next_index(1)?;
+                                assert_eq!(next_index_1, 0);
+                                assert!(!exists_1);
+
+                                let (prev_index, exists) = odpi_obj.get_prev_index(1)?;
+                                assert_eq!(prev_index, 0);
+                                assert!(exists);
+                                let (prev_index_1, exists_1) = odpi_obj.get_prev_index(0)?;
+                                assert_eq!(prev_index_1, 0);
+                                assert!(!exists_1);
+
+                                let mut size = odpi_obj.get_size()?;
+                                assert_eq!(size, 2);
+
+                                odpi_obj.trim(1)?;
+                                size = odpi_obj.get_size()?;
+                                assert_eq!(size, 1);
                             }
                         }
                     }
