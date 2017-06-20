@@ -230,8 +230,8 @@ mod test {
         for (idx, d) in str_test_data.iter_mut().enumerate() {
             let data: Data = (d as *mut ODPIData).into();
             match idx {
-                0 => assert_eq!(data.as_string(), "jozias"),
-                1 => assert_eq!(data.as_string(), ""),
+                0 => assert_eq!(data.get_string(), "jozias"),
+                1 => assert_eq!(data.get_string(), ""),
                 _ => assert!(false),
             }
         }

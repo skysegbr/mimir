@@ -530,11 +530,11 @@ mod test {
         let (id_type, id_ptr) = bbn.get_query_value(1)?;
         assert_eq!(id_type, Double);
         let data: Data = id_ptr.into();
-        assert_eq!(data.as_double(), 1.0);
+        assert_eq!(data.get_double(), 1.0);
         let (un_type, un_ptr) = bbn.get_query_value(2)?;
         assert_eq!(un_type, Bytes);
         let data: Data = un_ptr.into();
-        assert_eq!(data.as_string(), "jozias");
+        assert_eq!(data.get_string(), "jozias");
 
         // bind_by_pos / execute test
         let bbp = conn.prepare_stmt(Some("select * from username where username = :username"),

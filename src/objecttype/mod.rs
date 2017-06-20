@@ -188,7 +188,7 @@ mod test {
             let (object_col_type, object_col_ptr) = object_col.get_query_value(1)?;
             assert_eq!(object_col_type, Object);
             let data: Data = object_col_ptr.into();
-            let obj: Object = data.as_object().into();
+            let obj: Object = data.get_object().into();
 
             for (idx, (obj_attr, attr_info)) in
                 obj_attrs.iter().zip(attr_infos.iter()).enumerate() {
