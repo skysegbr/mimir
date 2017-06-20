@@ -659,6 +659,12 @@ extern "C" {
 
 extern "C" {
     pub fn dpiSubscr_addRef(subscr: *mut opaque::ODPISubscr) -> ::std::os::raw::c_int;
+    pub fn dpiSubscr_close(subscr: *mut opaque::ODPISubscr) -> ::std::os::raw::c_int;
+    pub fn dpiSubscr_prepareStmt(subscr: *mut opaque::ODPISubscr,
+                                 sql: *const ::std::os::raw::c_char,
+                                 sqlLength: u32,
+                                 stmt: *mut *mut opaque::ODPIStmt)
+                                 -> ::std::os::raw::c_int;
     pub fn dpiSubscr_release(subscr: *mut opaque::ODPISubscr) -> ::std::os::raw::c_int;
 }
 

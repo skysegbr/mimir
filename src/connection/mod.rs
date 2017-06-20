@@ -416,7 +416,9 @@ impl Connection {
     /// Returns a reference to a subscription which is used for requesting notifications of changes
     /// on tables or queries that are made in the database. The reference should be released as soon
     /// as it is no longer needed.
-    pub fn new_subscription(&self, subscr_create_params: SubscrCreate) -> Result<Subscription> {
+    pub fn new_subscription(&self,
+                            subscr_create_params: SubscrCreate)
+                            -> Result<(u32, Subscription)> {
         let mut subscr_ptr = ptr::null_mut();
         let mut subscr_id = 0;
 
@@ -425,9 +427,12 @@ impl Connection {
                                                   &mut subscr_ptr,
                                                   &mut subscr_id),
                  {
-                     let mut sub: Subscription = subscr_ptr.into();
-                     sub.set_id(subscr_id);
-                     Ok(sub)
+                     if subscr_ptr.is_null() {
+                         Err(ErrorKind::Connection("dpiConn_newSubscription".to_string()).into())
+                     } else {
+                         let sub: Subscription = subscr_ptr.into();
+                         Ok((subscr_id, sub))
+                     }
                  },
                  ErrorKind::Connection("dpiConn_newSubscription".to_string()))
     }

@@ -446,6 +446,12 @@ impl Info {
     }
 }
 
+impl From<*mut ODPIStmt> for Statement {
+    fn from(inner: *mut ODPIStmt) -> Statement {
+        Statement { inner: inner }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use test::CREDS;
