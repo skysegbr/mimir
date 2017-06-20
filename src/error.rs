@@ -69,6 +69,10 @@ error_chain! {
             description("Pool: call to ODPI-C function failed!")
             display("Pool: call to '{}' function failed!", fn_name)
         }
+        Rowid(fn_name: String) {
+            description("Rowid: call to ODPI-C function failed!")
+            display("Rowid: call to '{}' function failed!", fn_name)
+        }
         Statement(fn_name: String) {
             description("Statement: call to ODPI-C function failed!")
             display("Statement: call to '{}' function failed!", fn_name)

@@ -561,6 +561,15 @@ extern "C" {
 }
 
 extern "C" {
+    pub fn dpiRowid_addRef(rowid: *mut opaque::ODPIRowid) -> ::std::os::raw::c_int;
+    pub fn dpiRowid_getStringValue(rowid: *mut opaque::ODPIRowid,
+                                   value: *mut *const ::std::os::raw::c_char,
+                                   valueLength: *mut u32)
+                                   -> ::std::os::raw::c_int;
+    pub fn dpiRowid_release(subscr: *mut opaque::ODPIRowid) -> ::std::os::raw::c_int;
+}
+
+extern "C" {
     pub fn dpiStmt_addRef(stmt: *mut opaque::ODPIStmt) -> ::std::os::raw::c_int;
     pub fn dpiStmt_bindByName(stmt: *mut opaque::ODPIStmt,
                               name: *const ::std::os::raw::c_char,
