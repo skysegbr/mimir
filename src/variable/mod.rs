@@ -6,7 +6,6 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-//! [Needs Complete Testing]
 //! Variable handles are used to represent memory areas used for transferring data to and from the
 //! database. They are created by calling the function `Connection::newVar()`. They are destroyed
 //! when the last reference to the variable is released by calling the function `release()`. They
@@ -203,9 +202,7 @@ mod test {
     use std::ffi::CString;
     use test::CREDS;
 
-    fn var_res() -> Result<()> {
-        let ctxt = Context::create()?;
-
+    fn within_context(ctxt: &Context) -> Result<()> {
         let mut ccp = ctxt.init_common_create_params()?;
         let enc_cstr = CString::new("UTF-8").expect("badness");
         ccp.set_encoding(enc_cstr.as_ptr());
@@ -243,6 +240,19 @@ mod test {
         conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
 
         Ok(())
+    }
+
+    fn var_res() -> Result<()> {
+        use std::io::{self, Write};
+
+        let ctxt = Context::create()?;
+        match within_context(&ctxt) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                writeln!(io::stderr(), "{}", ctxt.get_error())?;
+                Err(e)
+            }
+        }
     }
 
     #[test]
