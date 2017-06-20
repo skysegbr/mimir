@@ -282,9 +282,7 @@ mod test {
     use pool::Pool;
     use std::ffi::CString;
 
-    fn pool_res() -> Result<()> {
-        let ctxt = Context::create()?;
-
+    fn within_context(ctxt: &Context) -> Result<()> {
         let mut ccp = ctxt.init_common_create_params()?;
         let enc_cstr = CString::new("UTF-8").expect("badness");
         ccp.set_encoding(enc_cstr.as_ptr());
@@ -367,6 +365,19 @@ mod test {
         pool.close(flags::DPI_MODE_POOL_CLOSE_DEFAULT)?;
 
         Ok(())
+    }
+
+    fn pool_res() -> Result<()> {
+        use std::io::{self, Write};
+
+        let ctxt = Context::create()?;
+        match within_context(&ctxt) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                writeln!(io::stderr(), "{}", ctxt.get_error())?;
+                Err(e)
+            }
+        }
     }
 
     #[test]

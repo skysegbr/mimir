@@ -6,7 +6,6 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-//! [NOT IMPL]
 //! This structure represents instances of the types created by the SQL command CREATE OR REPLACE
 //! TYPE and is available by handle to a calling application or driver. An object is created by
 //! calling the function `ObjectType::createObject()` or by calling the function `Object::copy()`.
