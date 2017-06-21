@@ -1,8 +1,21 @@
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+mod macros;
+
+extern crate chrono;
 extern crate mimir;
+extern crate rand;
 
 mod context;
+mod connection;
+mod dequeue;
+mod enqueue;
+mod lob;
+mod message;
+mod objecttype;
+mod pool;
+mod statement;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -17,7 +30,7 @@ lazy_static! {
 
         for line_res in buf_reader.lines() {
             if let Ok(line) = line_res {
-                let parts = line.split(":").map(|x| {
+                let parts = line.split(':').map(|x| {
                     x.trim_right().to_string()
                 }).collect::<Vec<String>>();
                 creds.extend(parts);

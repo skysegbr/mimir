@@ -1,24 +1,12 @@
-use mimir::{enums, flags, structs};
+use mimir::{enums, flags};
 use mimir::context::Context;
 use mimir::context::params::AppContext;
 use mimir::error::Result;
+use mimir::SubscrMessage;
 use std::ffi::CString;
-use std::io::{self, Write};
 
-extern "C" fn subscr_callback(_context: *mut ::std::os::raw::c_void,
-                              _message: *mut structs::ODPISubscrMessage) {
+extern "C" fn subscr_callback(_ctxt: *mut ::std::os::raw::c_void, _message: *mut SubscrMessage) {
     // For testing
-}
-
-fn within_context(f: &Fn(&Context) -> Result<()>) -> Result<()> {
-    let ctxt = Context::create()?;
-    match f(&ctxt) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            writeln!(io::stderr(), "{}", ctxt.get_error())?;
-            Err(e)
-        }
-    }
 }
 
 fn no_op(_ctxt: &Context) -> Result<()> {
@@ -134,6 +122,7 @@ fn pcp(ctxt: &Context) -> Result<()> {
     Ok(())
 }
 
+#[cfg_attr(feature = "cargo-clippy", allow(should_assert_eq))]
 fn scp(ctxt: &Context) -> Result<()> {
     let mut scp = ctxt.init_subscr_create_params()?;
     assert_eq!(scp.get_subscr_namespace(),
@@ -169,18 +158,6 @@ fn scp(ctxt: &Context) -> Result<()> {
     assert!(scp.get_callback() == Some(subscr_callback));
 
     Ok(())
-}
-
-macro_rules! check_with_ctxt {
-    ($f:ident) => {{
-        match within_context(&$f) {
-            Ok(_) => assert!(true),
-            Err(e) => {
-                writeln!(io::stderr(), "{}", e).expect("badness");
-                assert!(false);
-            }
-        }
-    }};
 }
 
 #[test]

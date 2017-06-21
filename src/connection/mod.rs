@@ -1,4 +1,4 @@
-// Copyright (c) 2017 oic developers
+// Copyright (c) 2017 mimir developers
 //
 // Licensed under the Apache License, Version 2.0
 // <LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0> or the MIT
@@ -26,6 +26,7 @@ use odpi::opaque::ODPIConn;
 use odpi::structs::{ODPIEncodingInfo, ODPIVersionInfo};
 use slog::Logger;
 use statement::Statement;
+use std::ffi::{CStr, CString};
 use std::ptr;
 use subscription::Subscription;
 use util::ODPIStr;
@@ -286,7 +287,7 @@ impl Connection {
     /// retrieved from the environment variables NLS_LANG and NLS_NCHAR.
     pub fn get_encoding_info(&self) -> Result<encoding::Info> {
         let mut encoding_info: ODPIEncodingInfo = Default::default();
-        // TODO: Return the encoding info object.
+
         try_dpi!(externs::dpiConn_getEncodingInfo(self.inner, &mut encoding_info),
                  Ok(encoding_info.into()),
                  ErrorKind::Connection("dpiConn_getEncodingInfo".to_string()))
@@ -299,8 +300,23 @@ impl Connection {
         let mut dstlen = 0;
 
         try_dpi!(externs::dpiConn_getExternalName(self.inner, &mut pdst, &mut dstlen),
-                 Ok(ODPIStr::new(pdst, dstlen).into()),
-                 ErrorKind::Connection("dpiConn_getEdition".to_string()))
+                 {
+                     if pdst.is_null() {
+                         let err = "dpiConn_getExternalName: null pointer!".to_string();
+                         Err(ErrorKind::Connection(err).into())
+                     } else {
+                         let external_name_cstr = unsafe { CStr::from_ptr(pdst) };
+                         let external_name = external_name_cstr.to_string_lossy().into_owned();
+                         if external_name.len() == dstlen as usize {
+                             Ok(external_name_cstr.to_string_lossy().into_owned())
+                         } else {
+                             let err = "dpiConn_getExternalName: invalid string length!"
+                                 .to_string();
+                             Err(ErrorKind::Connection(err).into())
+                         }
+                     }
+                 },
+                 ErrorKind::Connection("dpiConn_getExternalName".to_string()))
     }
 
     #[doc(hidden)]
@@ -325,7 +341,22 @@ impl Connection {
         let mut dstlen = 0;
 
         try_dpi!(externs::dpiConn_getInternalName(self.inner, &mut pdst, &mut dstlen),
-                 Ok(ODPIStr::new(pdst, dstlen).into()),
+                 {
+                     if pdst.is_null() {
+                         let err = "dpiConn_getInternalName: null pointer!".to_string();
+                         Err(ErrorKind::Connection(err).into())
+                     } else {
+                         let external_name_cstr = unsafe { CStr::from_ptr(pdst) };
+                         let external_name = external_name_cstr.to_string_lossy().into_owned();
+                         if external_name.len() == dstlen as usize {
+                             Ok(external_name_cstr.to_string_lossy().into_owned())
+                         } else {
+                             let err = "dpiConn_getInternalName: invalid string length!"
+                                 .to_string();
+                             Err(ErrorKind::Connection(err).into())
+                         }
+                     }
+                 },
                  ErrorKind::Connection("dpiConn_getInternalName".to_string()))
     }
 
@@ -652,12 +683,22 @@ impl Connection {
     ///
     /// * `external_name` - a string in the encoding used for CHAR data which will be used to set
     /// the external name.
+    #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_truncation))]
     pub fn set_external_name(&self, external_name: &str) -> Result<()> {
-        let ext_name_s = ODPIStr::from(external_name);
+        let external_name_cstr = CString::new(external_name)?;
+        let external_name_len = external_name.len() + 1;
 
-        try_dpi!(externs::dpiConn_setExternalName(self.inner, ext_name_s.ptr(), ext_name_s.len()),
-                 Ok(()),
-                 ErrorKind::Connection("dpiConn_setExternalName".to_string()))
+        if external_name_len <= u32::max_value() as usize {
+            try_dpi!(externs::dpiConn_setExternalName(self.inner,
+                                                      external_name_cstr.as_ptr(),
+                                                      external_name_len as u32),
+                     Ok(()),
+                     ErrorKind::Connection("dpiConn_setExternalName".to_string()))
+        } else {
+            let err = "dpiConn_setExternalName: length out of bounds".to_string();
+            Err(ErrorKind::Connection(err).into())
+        }
+
     }
 
     /// Sets the internal name that is being used by the connection. This value is used when logging
@@ -665,12 +706,21 @@ impl Connection {
     ///
     /// * `internal_name` - a string in the encoding used for CHAR data which will be used to set
     /// the internal name.
+    #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_truncation))]
     pub fn set_internal_name(&self, internal_name: &str) -> Result<()> {
-        let int_name_s = ODPIStr::from(internal_name);
+        let internal_name_cstr = CString::new(internal_name)?;
+        let internal_name_len = internal_name.len() + 1;
 
-        try_dpi!(externs::dpiConn_setInternalName(self.inner, int_name_s.ptr(), int_name_s.len()),
-                 Ok(()),
-                 ErrorKind::Connection("dpiConn_setInternalName".to_string()))
+        if internal_name_len <= u32::max_value() as usize {
+            try_dpi!(externs::dpiConn_setInternalName(self.inner,
+                                                      internal_name_cstr.as_ptr(),
+                                                      internal_name_len as u32),
+                     Ok(()),
+                     ErrorKind::Connection("dpiConn_setInternalName".to_string()))
+        } else {
+            let err = "dpiConn_setInternalName: length out of bounds".to_string();
+            Err(ErrorKind::Connection(err).into())
+        }
     }
 
     /// Sets the module attribute on the connection. This is one of the end-to-end tracing
@@ -725,172 +775,6 @@ impl From<*mut ODPIConn> for Connection {
             inner: inner,
             stdout: None,
             stderr: None,
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use test::CREDS;
-    use connection::Connection;
-    use context::Context;
-    use error::Result;
-    use odpi::enums::ODPIDeqMode::*;
-    use odpi::enums::ODPIMessageDeliveryMode::*;
-    use odpi::enums::ODPINativeTypeNum::*;
-    use odpi::enums::ODPIOracleTypeNum::*;
-    use odpi::enums::ODPIVisibility::*;
-    use odpi::flags;
-    use odpi::structs::ODPISubscrMessage;
-    use rand::{self, Rng};
-    use std::ffi::CString;
-
-    extern "C" fn subscr_callback(_context: *mut ::std::os::raw::c_void,
-                                  _message: *mut ODPISubscrMessage) {
-        // For testing
-    }
-
-    fn within_context(ctxt: &Context) -> Result<()> {
-        let mut ccp = ctxt.init_common_create_params()?;
-        let enc_cstr = CString::new("UTF-8").expect("badness");
-        ccp.set_encoding(enc_cstr.as_ptr());
-        ccp.set_nchar_encoding(enc_cstr.as_ptr());
-        ccp.set_create_mode(flags::DPI_MODE_CREATE_EVENTS);
-
-        let conn = Connection::create(ctxt,
-                                      Some(&CREDS[0]),
-                                      Some(&CREDS[1]),
-                                      Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
-                                      Some(ccp),
-                                      None)?;
-        // add_ref / release / break_execution test
-        conn.add_ref()?;
-        conn.release()?;
-        conn.break_execution()?;
-        conn.ping()?;
-
-        // set_current_schema / get_current_schema test
-        conn.set_current_schema("jozias")?;
-        let current_schema = conn.get_current_schema()?;
-        assert_eq!(current_schema, "jozias");
-
-        let edition = conn.get_edition()?;
-        assert_eq!(edition, "");
-
-        conn.set_external_name("ext")?;
-        let external_name = conn.get_external_name()?;
-        assert_eq!(external_name, "ext");
-
-        conn.set_internal_name("ext")?;
-        let internal_name = conn.get_internal_name()?;
-        assert_eq!(internal_name, "ext");
-
-        let encoding_info = conn.get_encoding_info()?;
-        assert!(encoding_info.encoding() == "UTF-8");
-        assert!(encoding_info.nchar_encoding() == "UTF-8");
-        assert!(encoding_info.max_bytes_per_char() == 4);
-        assert!(encoding_info.max_bytes_per_nchar() == 4);
-
-        conn.set_statement_cache_size(40)?;
-        let statement_cache_size = conn.get_statement_cache_size()?;
-        assert_eq!(statement_cache_size, 40);
-
-        // begin_distrib_trans / get_ltxid / prepare_distrib_trans
-        let mut rng = rand::thread_rng();
-        conn.begin_distrib_trans(rng.gen::<i64>(), "One", "Two")?;
-        let ltxid = conn.get_ltxid()?;
-        assert_eq!(ltxid, "");
-        let commit_needed = conn.prepare_distrib_trans()?;
-        assert!(!commit_needed);
-
-        // get_server_version
-        let version_info = conn.get_server_version()?;
-        assert!(version_info.version() == "12.1.0.2.0");
-        assert!(version_info.version_num() == 1201000200);
-        assert!(version_info.release() ==
-                "Oracle Database 12c Standard Edition Release 12.1.0.2.0 - \
-                64bit Production");
-
-        // new_deq_options
-        let deq_opts = conn.new_deq_options()?;
-        let mode = deq_opts.get_mode()?;
-        assert_eq!(mode, Remove);
-
-        // new_enq_options
-        let enq_opts = conn.new_enq_options()?;
-        let visibility = enq_opts.get_visibility()?;
-        assert_eq!(visibility, OnCommit);
-
-        // new_msg_props
-        let msg_props = conn.new_msg_props()?;
-        let delivery_mode = msg_props.get_delivery_mode()?;
-        assert_eq!(delivery_mode, NotSet);
-
-        // new_subscr_props
-        let mut scp = ctxt.init_subscr_create_params()?;
-        scp.set_port_number(32276);
-        scp.set_timeout(10000);
-        scp.set_name("subscription");
-        scp.set_callback(Some(subscr_callback));
-        scp.set_recipient_name("yoda");
-
-        // TODO: Fix this to run on VM.
-        // let subscription = conn.new_subscription(scp)?;
-        // subscription.add_ref()?;
-        // subscription.release()?;
-
-        // new_temp_lob
-        let clob = conn.new_temp_lob(Clob)?;
-        let chunk_size = clob.get_chunk_size()?;
-        assert_eq!(chunk_size, 8132);
-
-        // new_var
-        let var = conn.new_var(Varchar, Bytes, 5, 256, false, false)?;
-        let sib = var.get_size_in_bytes()?;
-        assert_eq!(sib, 1024);
-        let num_elements_in_array = var.get_num_elements_in_array()?;
-        assert_eq!(num_elements_in_array, 5);
-        let data_arr = var.get_data()?;
-        assert_eq!(data_arr.len(), 5);
-
-        // prepare_stmt
-        let statement = conn.prepare_stmt(Some("select 1 from dual"), None, false)?;
-        statement.add_ref()?;
-        statement.release()?;
-
-        // sets
-        conn.set_action("action")?;
-        conn.set_client_identifier("client_identifier")?;
-        conn.set_client_info("client_info")?;
-        conn.set_db_op("insert")?;
-        conn.set_module("module")?;
-
-        Ok(())
-    }
-
-    fn connection_res() -> Result<()> {
-        use std::io::{self, Write};
-
-        let ctxt = Context::create()?;
-        match within_context(&ctxt) {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                writeln!(io::stderr(), "{}", ctxt.get_error())?;
-                Err(e)
-            }
-        }
-    }
-
-    #[test]
-    fn connection() {
-        use std::io::{self, Write};
-
-        match connection_res() {
-            Ok(_) => assert!(true),
-            Err(e) => {
-                writeln!(io::stderr(), "{}", e).expect("badness");
-                assert!(false);
-            }
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 oic developers
+// Copyright (c) 2017 mimir developers
 //
 // Licensed under the Apache License, Version 2.0
 // <LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0> or the MIT
@@ -11,23 +11,19 @@
 #![feature(untagged_unions)]
 #![recursion_limit="128"]
 #![cfg_attr(feature = "cargo-clippy", allow(unseparated_literal_suffix))]
+
 #[macro_use]
 extern crate bitflags;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
 extern crate getset;
-#[cfg(test)]
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate slog;
 #[macro_use]
 mod macros;
 
 extern crate chrono;
-#[cfg(test)]
-extern crate rand;
 
 // Public API
 pub mod common;
@@ -53,31 +49,8 @@ pub mod variable;
 mod odpi;
 mod util;
 
-pub use odpi::{constants, enums, flags, structs};
+pub use odpi::{constants, enums, flags};
+pub use odpi::structs::{ODPIBytes, ODPIData, ODPIObjectAttrInfo, ODPIObjectTypeInfo};
 pub use odpi::structs::ODPIDataValueUnion as DataUnion;
-
-#[cfg(test)]
-mod test {
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
-
-    #[cfg(test)]
-    lazy_static! {
-        pub static ref CREDS: Vec<String> = {
-            let file = File::open(".creds/oic-test")
-                .expect("bad creds");
-            let buf_reader = BufReader::new(file);
-            let mut creds = Vec::new();
-
-            for line_res in buf_reader.lines() {
-                if let Ok(line) = line_res {
-                    let parts = line.split(":").map(|x| {
-                        x.trim_right().to_string()
-                    }).collect::<Vec<String>>();
-                    creds.extend(parts);
-                }
-            }
-            creds
-        };
-    }
-}
+pub use odpi::structs::ODPISubscrMessage as SubscrMessage;
+pub use util::ODPIStr;

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 oic developers
+// Copyright (c) 2017 mimir developers
 //
 // Licensed under the Apache License, Version 2.0
 // <LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0> or the MIT
@@ -106,71 +106,5 @@ impl Options {
 impl From<*mut ODPIEnqOptions> for Options {
     fn from(inner: *mut ODPIEnqOptions) -> Options {
         Options { inner: inner }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use connection::Connection;
-    use context::Context;
-    use error::Result;
-    use odpi::flags;
-    use odpi::enums::ODPIMessageDeliveryMode::*;
-    use odpi::enums::ODPIVisibility::*;
-    use std::ffi::CString;
-    use test::CREDS;
-
-    fn enqueue_opts_res() -> Result<()> {
-        let ctxt = Context::create()?;
-
-        let mut ccp = ctxt.init_common_create_params()?;
-        let enc_cstr = CString::new("UTF-8").expect("badness");
-        ccp.set_encoding(enc_cstr.as_ptr());
-        ccp.set_nchar_encoding(enc_cstr.as_ptr());
-
-        let conn = Connection::create(&ctxt,
-                                      Some(&CREDS[0]),
-                                      Some(&CREDS[1]),
-                                      Some("//oic.cbsnae86d3iv.us-east-2.rds.amazonaws.com/ORCL"),
-                                      Some(ccp),
-                                      None)?;
-
-        conn.add_ref()?;
-
-        let enqueue_opts = conn.new_enq_options()?;
-        enqueue_opts.add_ref()?;
-
-        enqueue_opts.set_delivery_mode(Buffered)?;
-
-        enqueue_opts.set_transformation(Some("tsfm"))?;
-        /// TODO: Fix this test, doesn't seem to work.
-        // let transformation = enqueue_opts.get_transformation()?;
-        // assert_eq!(transformation, "tsfm");
-
-        let mut visibility = enqueue_opts.get_visibility()?;
-        assert_eq!(visibility, OnCommit);
-        enqueue_opts.set_visibility(Immediate)?;
-        visibility = enqueue_opts.get_visibility()?;
-        assert_eq!(visibility, Immediate);
-
-        enqueue_opts.release()?;
-
-        conn.release()?;
-        conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
-
-        Ok(())
-    }
-
-    #[test]
-    pub fn enqueue_opts() {
-        use std::io::{self, Write};
-
-        match enqueue_opts_res() {
-            Ok(_) => assert!(true),
-            Err(e) => {
-                writeln!(io::stderr(), "{}", e).expect("badness");
-                assert!(false);
-            }
-        }
     }
 }

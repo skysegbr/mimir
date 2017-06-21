@@ -1,4 +1,4 @@
-// Copyright (c) 2017 oic developers
+// Copyright (c) 2017 mimir developers
 //
 // Licensed under the Apache License, Version 2.0
 // <LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0> or the MIT
@@ -34,6 +34,11 @@ impl ODPIStr {
     /// Get the `len` value.
     pub fn len(&self) -> u32 {
         self.len
+    }
+
+    /// Is the string empty.
+    pub fn is_empty(&self) -> bool {
+        self.ptr.is_null() || self.len == 0
     }
 }
 
