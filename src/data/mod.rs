@@ -11,7 +11,7 @@
 //! (such as Go) do not have the ability to manipulate structures containing unions or the ability
 //! to process macros. For this reason, none of these functions perform any error checking. They are
 //! assumed to be replacements for direct manipulation of the various members of the structure.
-use chrono::{Datelike, DateTime, Duration, Timelike, TimeZone, UTC};
+use chrono::{Datelike, DateTime, Duration, Timelike, TimeZone, Utc};
 use odpi::opaque;
 use odpi::structs::{ODPIData, ODPIDataValueUnion};
 use util::ODPIStr;
@@ -177,8 +177,8 @@ impl Data {
         unsafe { (*self.inner).value.as_uint_64 = val }
     }
 
-    /// Get the value as a `UTC` when the native type is DPI_NATIVE_TYPE_TIMESTAMP.
-    pub fn get_utc(&self) -> DateTime<UTC> {
+    /// Get the value as a `Utc` when the native type is DPI_NATIVE_TYPE_TIMESTAMP.
+    pub fn get_utc(&self) -> DateTime<Utc> {
         let odpi_ts = unsafe { (*self.inner).value.as_timestamp };
         let y = odpi_ts.year as i32;
         let m = odpi_ts.month as u32;
@@ -186,12 +186,12 @@ impl Data {
         let h = odpi_ts.hour as u32;
         let mi = odpi_ts.minute as u32;
         let s = odpi_ts.second as u32;
-        UTC.ymd(y, m, d).and_hms_nano(h, mi, s, odpi_ts.fsecond)
+        Utc.ymd(y, m, d).and_hms_nano(h, mi, s, odpi_ts.fsecond)
     }
 
     /// Sets the value of the data when the native type is DPI_NATIVE_TYPE_TIMESTAMP.
     #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_truncation))]
-    pub fn set_utc(&self, val: DateTime<UTC>) {
+    pub fn set_utc(&self, val: DateTime<Utc>) {
         let mut odpi_ts = unsafe { (*self.inner).value.as_timestamp };
         odpi_ts.year = val.year() as i16;
         odpi_ts.month = val.month() as u8;

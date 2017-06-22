@@ -1,8 +1,8 @@
 use CREDS;
 use mimir::ODPIData;
 use mimir::data::Data;
-use mimir::connection::Connection;
-use mimir::context::Context;
+use mimir::Connection;
+use mimir::Context;
 use mimir::error::Result;
 use mimir::enums::ODPINativeTypeNum::*;
 use mimir::enums::ODPIOracleTypeNum::*;

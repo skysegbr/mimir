@@ -1,6 +1,6 @@
 use CREDS;
-use mimir::connection::Connection;
-use mimir::context::Context;
+use mimir::Connection;
+use mimir::Context;
 use mimir::enums::ODPIOracleTypeNum::Blob;
 use mimir::error::Result;
 use mimir::flags;

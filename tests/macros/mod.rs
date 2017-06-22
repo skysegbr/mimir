@@ -1,4 +1,4 @@
-use mimir::context::Context;
+use mimir::Context;
 use mimir::error::Result;
 
 pub fn within_context(f: &Fn(&Context) -> Result<()>) -> Result<()> {

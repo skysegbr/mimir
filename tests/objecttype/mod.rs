@@ -1,7 +1,7 @@
 use CREDS;
-use chrono::{TimeZone, UTC};
-use mimir::connection::Connection;
-use mimir::context::Context;
+use chrono::{TimeZone, Utc};
+use mimir::Connection;
+use mimir::Context;
 use mimir::data::Data;
 use mimir::enums;
 use mimir::error::Result;
@@ -78,13 +78,13 @@ fn validate_timestamp(idx: usize, attr_data: &ODPIData) -> Result<()> {
     let h = odpi_ts.hour as u32;
     let mi = odpi_ts.minute as u32;
     let se = odpi_ts.second as u32;
-    let ts = UTC.ymd(y, m, d).and_hms_nano(h, mi, se, odpi_ts.fsecond);
+    let ts = Utc.ymd(y, m, d).and_hms_nano(h, mi, se, odpi_ts.fsecond);
 
     if idx == 3 {
-        let expected = UTC.ymd(2007, 3, 6).and_hms_nano(0, 0, 0, 0);
+        let expected = Utc.ymd(2007, 3, 6).and_hms_nano(0, 0, 0, 0);
         assert_eq!(ts, expected);
     } else if idx == 4 {
-        let expected = UTC.ymd(2008, 9, 12).and_hms_nano(16, 40, 0, 0);
+        let expected = Utc.ymd(2008, 9, 12).and_hms_nano(16, 40, 0, 0);
         assert_eq!(ts, expected);
     } else {
         assert!(false);

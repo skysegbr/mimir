@@ -1,7 +1,7 @@
 use CREDS;
-use chrono::{Datelike, UTC, Timelike};
-use mimir::connection::Connection;
-use mimir::context::Context;
+use chrono::{Datelike, Utc, Timelike};
+use mimir::Connection;
+use mimir::Context;
 use mimir::enums::ODPIMessageDeliveryMode::NotSet;
 use mimir::enums::ODPIMessageState::Ready;
 use mimir::error::Result;
@@ -43,7 +43,7 @@ fn msg(ctxt: &Context) -> Result<()> {
     let delivery_mode = msg_props.get_delivery_mode()?;
     assert_eq!(delivery_mode, NotSet);
     let enq_time = msg_props.get_enq_time()?;
-    let now = UTC::now();
+    let now = Utc::now();
     assert_eq!(enq_time.year(), now.year());
     assert_eq!(enq_time.month(), now.month());
     assert_eq!(enq_time.day(), now.day());

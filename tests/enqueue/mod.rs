@@ -1,6 +1,6 @@
 use CREDS;
-use mimir::connection::Connection;
-use mimir::context::Context;
+use mimir::Connection;
+use mimir::Context;
 use mimir::enums::ODPIMessageDeliveryMode::Buffered;
 use mimir::enums::ODPIVisibility::{Immediate, OnCommit};
 use mimir::error::Result;

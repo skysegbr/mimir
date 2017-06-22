@@ -1,5 +1,5 @@
 use CREDS;
-use mimir::context::Context;
+use mimir::Context;
 use mimir::data::Data;
 use mimir::enums;
 use mimir::enums::ODPINativeTypeNum::{Bytes, Double};

@@ -7,7 +7,7 @@
 // modified, or distributed except according to those terms.
 
 //! ODPI-C public structs.
-use chrono::{DateTime, TimeZone, UTC};
+use chrono::{DateTime, TimeZone, Utc};
 use odpi::{enums, externs, flags, opaque};
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
@@ -814,8 +814,8 @@ pub struct ODPITimestamp {
     pub tz_minute_offset: i8,
 }
 
-impl From<ODPITimestamp> for DateTime<UTC> {
-    fn from(timestamp: ODPITimestamp) -> DateTime<UTC> {
+impl From<ODPITimestamp> for DateTime<Utc> {
+    fn from(timestamp: ODPITimestamp) -> DateTime<Utc> {
         let y = timestamp.year as i32;
         let m = timestamp.month as u32;
         let d = timestamp.day as u32;
@@ -825,9 +825,9 @@ impl From<ODPITimestamp> for DateTime<UTC> {
         let fs = timestamp.fsecond * 1000;
 
         if y == -10100 && m == 0 && d == 0 {
-            UTC::now()
+            Utc::now()
         } else {
-            UTC.ymd(y, m, d).and_hms_micro(h, mm, s, fs)
+            Utc.ymd(y, m, d).and_hms_micro(h, mm, s, fs)
         }
     }
 }

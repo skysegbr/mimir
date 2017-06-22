@@ -1,6 +1,6 @@
 use CREDS;
-use mimir::connection::Connection;
-use mimir::context::Context;
+use mimir::Connection;
+use mimir::Context;
 use mimir::error::Result;
 use mimir::enums::ODPIDeqMode::{Browse, Remove};
 use mimir::enums::ODPIDeqNavigation::{FirstMsg, NextMsg};

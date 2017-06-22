@@ -25,11 +25,14 @@ mod macros;
 
 extern crate chrono;
 
+mod common;
+mod connection;
+mod context;
+mod data;
+mod odpi;
+mod util;
+
 // Public API
-pub mod common;
-pub mod connection;
-pub mod context;
-pub mod data;
 pub mod dequeue;
 pub mod enqueue;
 #[allow(missing_docs)]
@@ -46,11 +49,12 @@ pub mod statement;
 pub mod subscription;
 pub mod variable;
 
-mod odpi;
-mod util;
-
+// Flattened Public API
+pub use connection::Connection;
+pub use context::Context;
+pub use context::params::AppContext;
+pub use data::Data;
 pub use odpi::{constants, enums, flags};
-pub use odpi::structs::{ODPIBytes, ODPIData, ODPIObjectAttrInfo, ODPIObjectTypeInfo};
-pub use odpi::structs::ODPIDataValueUnion as DataUnion;
-pub use odpi::structs::ODPISubscrMessage as SubscrMessage;
+pub use odpi::structs::{ODPIBytes, ODPIData, ODPIDataValueUnion, ODPIObjectAttrInfo,
+                        ODPIObjectTypeInfo, ODPISubscrMessage};
 pub use util::ODPIStr;

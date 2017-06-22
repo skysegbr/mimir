@@ -1,7 +1,5 @@
 use CREDS;
-use mimir::{ODPIBytes, DataUnion, ODPIStr};
-use mimir::connection::Connection;
-use mimir::context::Context;
+use mimir::{Connection, Context, ODPIBytes, ODPIDataValueUnion, ODPIStr};
 use mimir::data::Data;
 use mimir::enums::ODPIFetchMode::Last;
 use mimir::enums::ODPINativeTypeNum::{Bytes, Double, Int64};
@@ -117,7 +115,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
         encoding: enc.as_ptr() as *const ::std::os::raw::c_char,
     };
 
-    let t_data = Data::new(false, DataUnion { as_bytes: odpi_bytes });
+    let t_data = Data::new(false, ODPIDataValueUnion { as_bytes: odpi_bytes });
     let bind_by_value_name = conn.prepare_stmt(Some("select * from username \
                                                      where username = :username"),
                                                None,
@@ -132,7 +130,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
                                                     where username = :username"),
                                               None,
                                               false)?;
-    let t_data_1 = Data::new(false, DataUnion { as_bytes: odpi_bytes });
+    let t_data_1 = Data::new(false, ODPIDataValueUnion { as_bytes: odpi_bytes });
     bind_by_value_pos.bind_value_by_pos(1, Bytes, &t_data_1)?;
     cols = bind_by_value_pos.execute(flags::EXEC_DEFAULT)?;
     assert_eq!(cols, 2);

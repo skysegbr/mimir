@@ -1,11 +1,10 @@
 use mimir::{enums, flags};
-use mimir::context::Context;
-use mimir::context::params::AppContext;
+use mimir::{AppContext, Context, ODPISubscrMessage};
 use mimir::error::Result;
-use mimir::SubscrMessage;
 use std::ffi::CString;
 
-extern "C" fn subscr_callback(_ctxt: *mut ::std::os::raw::c_void, _message: *mut SubscrMessage) {
+extern "C" fn subscr_callback(_ctxt: *mut ::std::os::raw::c_void,
+                              _message: *mut ODPISubscrMessage) {
     // For testing
 }
 

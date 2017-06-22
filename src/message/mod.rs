@@ -10,7 +10,7 @@
 //! and dequeued using advanced queuing. They are created by calling the function
 //! `Connection::new_msg_props()` and are destroyed by releasing the last reference by calling the
 //! function `Properties::release()`.
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use error::{ErrorKind, Result};
 use odpi::{enums, externs};
 use odpi::opaque::ODPIMsgProps;
@@ -85,7 +85,7 @@ impl Properties {
     }
 
     /// Returns the time that the message was enqueued.
-    pub fn get_enq_time(&self) -> Result<DateTime<UTC>> {
+    pub fn get_enq_time(&self) -> Result<DateTime<Utc>> {
         let mut timestamp: ODPITimestamp = Default::default();
 
         try_dpi!(externs::dpiMsgProps_getEnqTime(self.inner, &mut timestamp),

@@ -1,18 +1,17 @@
 use CREDS;
 use mimir::flags;
-use mimir::context::Context;
-use mimir::connection::Connection;
+use mimir::{Connection, Context, ODPISubscrMessage};
 use mimir::enums::ODPIDeqMode::Remove;
 use mimir::enums::ODPIMessageDeliveryMode::NotSet;
 use mimir::enums::ODPINativeTypeNum::Bytes;
 use mimir::enums::ODPIOracleTypeNum::{Clob, Varchar};
 use mimir::enums::ODPIVisibility::OnCommit;
 use mimir::error::Result;
-use mimir::SubscrMessage;
 use rand::{self, Rng};
 use std::ffi::CString;
 
-extern "C" fn subscr_callback(_context: *mut ::std::os::raw::c_void, _message: *mut SubscrMessage) {
+extern "C" fn subscr_callback(_context: *mut ::std::os::raw::c_void,
+                              _message: *mut ODPISubscrMessage) {
     // For testing
 }
 
