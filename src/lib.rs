@@ -29,32 +29,43 @@ mod common;
 mod connection;
 mod context;
 mod data;
+mod dequeue;
+mod enqueue;
+mod lob;
+mod message;
 mod odpi;
+mod object;
+mod objectattr;
+mod objecttype;
+mod pool;
+mod query;
+mod rowid;
+mod statement;
+mod subscription;
 mod util;
+mod variable;
 
 // Public API
-pub mod dequeue;
-pub mod enqueue;
 #[allow(missing_docs)]
 pub mod error;
-pub mod lob;
-pub mod message;
-pub mod object;
-pub mod objectattr;
-pub mod objecttype;
-pub mod pool;
-pub mod query;
-pub mod rowid;
-pub mod statement;
-pub mod subscription;
-pub mod variable;
 
-// Flattened Public API
 pub use connection::Connection;
 pub use context::Context;
 pub use context::params::AppContext;
 pub use data::Data;
+pub use dequeue::Options as DeqOptions;
+pub use enqueue::Options as EnqOptions;
+pub use lob::Lob;
+pub use message::Properties as MsgProps;
+pub use object::Object;
+pub use objectattr::ObjectAttr;
+pub use objecttype::ObjectType;
 pub use odpi::{constants, enums, flags};
 pub use odpi::structs::{ODPIBytes, ODPIData, ODPIDataValueUnion, ODPIObjectAttrInfo,
                         ODPIObjectTypeInfo, ODPISubscrMessage};
+pub use pool::Pool;
+pub use query::Info as QueryInfo;
+pub use rowid::Rowid;
+pub use statement::Statement;
 pub use util::ODPIStr;
+pub use variable::Var;

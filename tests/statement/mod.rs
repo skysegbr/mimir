@@ -1,14 +1,11 @@
 use CREDS;
-use mimir::{Connection, Context, ODPIBytes, ODPIDataValueUnion, ODPIStr};
-use mimir::data::Data;
+use mimir::{Connection, Context, Data, ODPIBytes, ODPIDataValueUnion, ODPIStr, QueryInfo, Var};
 use mimir::enums::ODPIFetchMode::Last;
 use mimir::enums::ODPINativeTypeNum::{Bytes, Double, Int64};
 use mimir::enums::ODPIOracleTypeNum::{Number, Varchar};
 use mimir::enums::ODPIStatementType::Insert;
 use mimir::error::Result;
 use mimir::flags;
-use mimir::query::Info;
-use mimir::variable::Var;
 use rand::{self, Rng};
 use std::ffi::CString;
 
@@ -21,7 +18,7 @@ fn add_ref_release(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-fn validate_query_info(query_info: &Info) -> Result<()> {
+fn validate_query_info(query_info: &QueryInfo) -> Result<()> {
     assert_eq!(query_info.name(), "ID");
     assert_eq!(query_info.oracle_type_num(), Number);
     assert_eq!(query_info.default_native_type_num(), Double);
@@ -42,7 +39,7 @@ fn bind_by_name(conn: &Connection, username_var: &Var) -> Result<()> {
 
     bind_by_name.bind_by_name(":username", username_var)?;
 
-    let cols = bind_by_name.execute(flags::EXEC_DEFAULT)?;
+    let cols = bind_by_name.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(cols, 2);
 
     let query_cols = bind_by_name.get_num_query_columns()?;
@@ -102,7 +99,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
                                         None,
                                         false)?;
     bind_by_pos.bind_by_pos(1, &username_var)?;
-    let mut cols = bind_by_pos.execute(flags::EXEC_DEFAULT)?;
+    let mut cols = bind_by_pos.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(cols, 2);
 
     // bind_value_by_name / execute test
@@ -122,7 +119,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
                                                false)?;
     bind_by_value_name
         .bind_value_by_name(":username", Bytes, &t_data)?;
-    cols = bind_by_value_name.execute(flags::EXEC_DEFAULT)?;
+    cols = bind_by_value_name.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(cols, 2);
 
     // bind_value_by_pos / execute test
@@ -132,7 +129,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
                                               false)?;
     let t_data_1 = Data::new(false, ODPIDataValueUnion { as_bytes: odpi_bytes });
     bind_by_value_pos.bind_value_by_pos(1, Bytes, &t_data_1)?;
-    cols = bind_by_value_pos.execute(flags::EXEC_DEFAULT)?;
+    cols = bind_by_value_pos.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(cols, 2);
 
     // execute / fetch test
@@ -140,7 +137,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
                                   None,
                                   false)?;
     fetch.bind_by_pos(1, &username_var)?;
-    cols = fetch.execute(flags::EXEC_DEFAULT)?;
+    cols = fetch.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(cols, 2);
     let (found, bbp_buffer_row_index) = fetch.fetch()?;
     assert!(found);
@@ -156,7 +153,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
         false,
     )?;
     fetch_rows.bind_by_pos(1, &username_var)?;
-    cols = fetch_rows.execute(flags::EXEC_DEFAULT)?;
+    cols = fetch_rows.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(cols, 2);
     let (buffer_row_index, num_rows_fetched, more_rows) = fetch_rows.fetch_rows(10)?;
     assert_eq!(buffer_row_index, 0);
@@ -186,7 +183,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
 
     // execute /fetch_rows / get_row_count / scroll test
     let all_users = conn.prepare_stmt(Some("select * from username"), None, false)?;
-    let au_cols = all_users.execute(flags::EXEC_DEFAULT)?;
+    let au_cols = all_users.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(au_cols, 2);
     all_users.fetch_rows(10)?;
     let row_count = all_users.get_row_count()?;
@@ -215,7 +212,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
     }
     em.bind_by_pos(2, &un_var)?;
 
-    em.execute_many(flags::EXEC_DEFAULT, 2)?;
+    em.execute_many(flags::DPI_MODE_EXEC_DEFAULT, 2)?;
 
     bind_by_pos.close(None)?;
     bind_by_value_name.close(None)?;

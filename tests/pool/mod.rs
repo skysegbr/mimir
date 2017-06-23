@@ -1,11 +1,9 @@
 use CREDS;
-use mimir::Context;
-use mimir::data::Data;
+use mimir::{Context, Data, Pool};
 use mimir::enums;
 use mimir::enums::ODPINativeTypeNum::{Bytes, Double};
 use mimir::error::Result;
 use mimir::flags;
-use mimir::pool::Pool;
 use std::ffi::CString;
 
 fn pool_res(ctxt: &Context) -> Result<()> {
@@ -66,7 +64,7 @@ fn pool_res(ctxt: &Context) -> Result<()> {
                                  None,
                                  false)?;
 
-    stmt.execute(flags::EXEC_DEFAULT)?;
+    stmt.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     stmt.fetch()?;
     let (id_type, id_ptr) = stmt.get_query_value(1)?;
     let (username_type, username_ptr) = stmt.get_query_value(2)?;

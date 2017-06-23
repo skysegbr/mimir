@@ -1,16 +1,10 @@
 use CREDS;
 use chrono::{TimeZone, Utc};
-use mimir::Connection;
-use mimir::Context;
-use mimir::data::Data;
+use mimir::{Connection, Context, Data, Object, ObjectAttr, ObjectType, ODPIData,
+            ODPIObjectAttrInfo, ODPIObjectTypeInfo, ODPIStr, Statement};
 use mimir::enums;
 use mimir::error::Result;
 use mimir::flags;
-use mimir::object::Object;
-use mimir::objectattr::ObjectAttr;
-use mimir::objecttype::ObjectType;
-use mimir::{ODPIData, ODPIObjectAttrInfo, ODPIObjectTypeInfo, ODPIStr};
-use mimir::statement::Statement;
 use std::ffi::CString;
 
 fn validate_object_attr_info(idx: usize, attr_info: &ODPIObjectAttrInfo) -> Result<()> {
@@ -259,7 +253,7 @@ fn obj_type(ctxt: &Context) -> Result<()> {
                                        None,
                                        false)?;
 
-    let cols = object_col.execute(flags::EXEC_DEFAULT)?;
+    let cols = object_col.execute(flags::DPI_MODE_EXEC_DEFAULT)?;
     assert_eq!(cols, 1);
 
     let query_info = object_col.get_query_info(1)?;

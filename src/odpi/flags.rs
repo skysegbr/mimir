@@ -63,20 +63,20 @@ bitflags! {
     /// that the OCI objects mode is always enabled.
     pub struct ODPIExecMode: u32 {
         /// Default mode for execution. Metadata is made available after queries are executed.
-        const EXEC_DEFAULT        = 0x0;
+        const DPI_MODE_EXEC_DEFAULT        = 0x0;
         /// Do not execute the statement but simply acquire the metadata for the query.
-        const DESCRIBE_ONLY       = 0x10;
+        const DPI_MODE_EXEC_DESCRIBE_ONLY       = 0x10;
         /// If execution completes successfully, the current active transaction is committed.
-        const COMMIT_ON_SUCCESS   = 0x20;
+        const DPI_MODE_EXEC_COMMIT_ON_SUCCESS   = 0x20;
         /// Enable batch error mode. This permits an an array DML operation to succeed even if some
         /// of the individual operations fail. The errors can be retrieved using the function
         /// `dpiStmt_getBatchErrors()`.
-        const BATCH_ERRORS        = 0x80;
+        const DPI_MODE_EXEC_BATCH_ERRORS        = 0x80;
         /// Do not execute the statement but only parse it and return any parse errors.
-        const PARSE_ONLY          = 0x100;
+        const DPI_MODE_EXEC_PARSE_ONLY          = 0x100;
         /// Enable getting row counts for each DML operation when performing an array DML execution.
         /// The actual row counts can be retrieved using the function `dpiStmt_getRowCounts()`.
-        const ARRAY_DML_ROWCOUNTS = 0x100000;
+        const DPI_MODE_EXEC_ARRAY_DML_ROWCOUNTS = 0x100000;
     }
 }
 
