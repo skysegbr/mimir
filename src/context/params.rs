@@ -284,6 +284,7 @@ impl ConnCreate {
     /// value is only used when creating standalone connections. It is expected to be NULL or an
     /// array of `ODPIAppContext` structures. The context specified here can be used in logon
     /// triggers, for example. The default value is NULL.
+    #[cfg_attr(feature = "cargo-clippy", allow(used_underscore_binding))]
     pub fn get_app_context(&self) -> Vec<AppContext> {
         #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_wrap))]
         let len = self.conn.num_app_context as isize;
@@ -297,6 +298,7 @@ impl ConnCreate {
     }
 
     /// Set the `app_context` value.
+    #[cfg_attr(feature = "cargo-clippy", allow(used_underscore_binding))]
     pub fn set_app_context(&mut self, app_contexts: Vec<AppContext>) -> &mut ConnCreate {
         #[cfg_attr(feature = "cargo-clippy", allow(cast_possible_truncation))]
         let len = app_contexts.len() as u32;

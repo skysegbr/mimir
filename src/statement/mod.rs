@@ -253,6 +253,7 @@ impl Statement {
     }
 
     /// Returns the names of the unique bind variables in the prepared statement.
+    #[cfg_attr(feature = "cargo-clippy", allow(used_underscore_binding))]
     pub fn get_bind_names(&self, num_bind_names: u32) -> Result<Vec<String>> {
         let mut actual_num_bind_names = num_bind_names;
         let mut names_vec: Vec<*const ::std::os::raw::c_char> = Vec::with_capacity(num_bind_names as

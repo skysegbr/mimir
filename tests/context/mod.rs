@@ -32,6 +32,7 @@ fn ccp(ctxt: &Context) -> Result<()> {
     Ok(())
 }
 
+#[cfg_attr(feature = "cargo-clippy", allow(used_underscore_binding))]
 fn conn_cp(ctxt: &Context) -> Result<()> {
     let mut conn = ctxt.init_conn_create_params()?;
     let auth_default_flags = conn.get_auth_mode();

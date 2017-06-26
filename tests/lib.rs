@@ -28,6 +28,7 @@ lazy_static! {
         let buf_reader = BufReader::new(file);
         let mut creds = Vec::new();
 
+        #[cfg_attr(feature = "cargo-clippy", allow(used_underscore_binding))]
         for line_res in buf_reader.lines() {
             if let Ok(line) = line_res {
                 let parts = line.split(':').map(|x| {

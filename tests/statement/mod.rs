@@ -74,6 +74,7 @@ fn bind_by_name(conn: &Connection, username_var: &Var) -> Result<()> {
     Ok(())
 }
 
+#[cfg_attr(feature = "cargo-clippy", allow(used_underscore_binding))]
 fn stmt_res(ctxt: &Context) -> Result<()> {
     let mut ccp = ctxt.init_common_create_params()?;
     let enc_cstr = CString::new("UTF-8").expect("badness");
