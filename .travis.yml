@@ -9,4 +9,5 @@ before_script:
   - cd /opt/oracle
   - unzip -fo /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip
   - unzip -fo /tmp/instantclient-sdk-linux.x64-12.2.0.1.0.zip
-  - echo "Done"
+  - export LD_LIBRARY_PATH=/opt/oracle/instantclient_12_2:$LD_LIBRARY_PATH
+  - cd
