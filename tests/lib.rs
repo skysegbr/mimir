@@ -42,6 +42,11 @@ lazy_static! {
             let password = env::var("MIMIR_PASSWORD").expect("invalid password");
             creds.push(username);
             creds.push(password);
+
+            let odpic_username = env::var("ODPIC_USERNAME").expect("invalid username");
+            let odpic_password = env::var("ODPIC_PASSWORD").expect("invalid password");
+            creds.push(odpic_username);
+            creds.push(odpic_password);
         }
         creds
     };
