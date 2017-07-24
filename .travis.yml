@@ -2,6 +2,10 @@ language: rust
 rust:
   - nightly
 
+env:
+  - RUST_TEST_THREADS=1
+  - RUST_BACKTRACE=full
+
 before_script:
   - wget https://s3.us-east-2.amazonaws.com/mimir-instantclient/instantclient-basic-linux.x64-12.2.0.1.0.zip -O /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip
   - wget https://s3.us-east-2.amazonaws.com/mimir-instantclient/instantclient-sdk-linux.x64-12.2.0.1.0.zip -O /tmp/instantclient-sdk-linux.x64-12.2.0.1.0.zip
