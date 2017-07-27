@@ -1,4 +1,9 @@
 [workspace]
 members = [
-    "mimir"
+    "mimir",
+    "mimiron"
+]
+
+excludes = [
+    "scripts"
 ]

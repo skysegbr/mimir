@@ -1,0 +1,3 @@
+#!/bin/sh
+cd mimir && cargo clippy -- -D clippy-pedantic && cd ..
+cd mimiron && cargo clippy -- -D clippy-pedantic && cd ..
