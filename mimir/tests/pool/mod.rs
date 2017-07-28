@@ -83,6 +83,7 @@ fn pool_res(ctxt: &Context) -> Result<()> {
     let open_count = pool.get_open_count()?;
     assert_eq!(open_count, 1);
 
+    stmt.release()?;
     conn.release()?;
     conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
     pool.release()?;

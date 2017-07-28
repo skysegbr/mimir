@@ -19,10 +19,7 @@ fn lob_res(ctxt: &Context) -> Result<()> {
                                   Some(ccp),
                                   None)?;
 
-    conn.add_ref()?;
-
     let temp_lob = conn.new_temp_lob(Blob)?;
-    temp_lob.add_ref()?;
 
     let size_in_bytes = temp_lob.get_buffer_size(1024)?;
     assert_eq!(size_in_bytes, 1024);
@@ -53,10 +50,9 @@ fn lob_res(ctxt: &Context) -> Result<()> {
     let is_open_after_close = temp_lob.get_is_resource_open()?;
     assert!(!is_open_after_close);
 
-
     temp_lob.release()?;
-    conn.release()?;
     conn.close(flags::DPI_MODE_CONN_CLOSE_DEFAULT, None)?;
+    conn.release()?;
 
     Ok(())
 }
