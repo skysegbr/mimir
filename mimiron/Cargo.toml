@@ -8,6 +8,7 @@ version = "0.1.0"
 [dependencies]
 clap = "2.25.0"
 error-chain = "0.10.0"
+lazy_static = "0.2.8"
 rusoto_core = "0.27.0"
 rusoto_rds = "0.27.0"
 term = "0.4.6"

@@ -12,8 +12,10 @@ error_chain!{
         Credentials(::rusoto_core::CredentialsError);
         DescribeDBInstances(::rusoto_rds::DescribeDBInstancesError);
         DescribeEventCategories(::rusoto_rds::DescribeEventCategoriesError);
+        DescribeEventSubscriptions(::rusoto_rds::DescribeEventSubscriptionsError);
         DescribeEvents(::rusoto_rds::DescribeEventsError);
         Io(::std::io::Error);
+        ParseInt(::std::num::ParseIntError);
         StartDBInstance(::rusoto_rds::StartDBInstanceError);
         StopDBInstance(::rusoto_rds::StopDBInstanceError);
         Term(::term::Error);

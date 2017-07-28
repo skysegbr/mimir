@@ -17,29 +17,9 @@ use std::collections::HashMap;
 use std::iter;
 use term;
 
-/// The events submodule declaration.
-fn events_submodule<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("event")
-        .about("Work with Amazon AWS RDS Events")
-        .subcommand(SubCommand::with_name("describe")
-                        .about("Describe RDS Events")
-                        .subcommand(SubCommand::with_name("categories")
-                                        .about("Describe RDS Event Categories")
-                                        .arg(Arg::with_name("source_type")
-                                                 .help("A source type to filter on.")
-                                                 .possible_values(&["db-instance",
-                                                                    "db-parameter-group",
-                                                                    "db-security-group",
-                                                                    "db-snapshot",
-                                                                    "db-cluster",
-                                                                    "db-cluster-snapshot"])))
-                        .subcommand(SubCommand::with_name("events"))
-                        .subcommand(SubCommand::with_name("subscriptions")
-                                        .about("Describe RDS Event Subscriptions")))
-}
-
 /// CLI Runtime
 pub fn run() -> Result<i32> {
+    let range: Vec<String> = (20..101).map(|x| x.to_string()).collect();
     let matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -48,7 +28,7 @@ pub fn run() -> Result<i32> {
         .subcommand(SubCommand::with_name("create")
                         .about("Create an Oracle RDS instance.")
                         .arg(Arg::with_name("instance_id").help("The unique instance identifier")))
-        .subcommand(events_submodule())
+        .subcommand(event::subcommand(&range))
         .subcommand(SubCommand::with_name("start")
                         .about("Start an RDS instance with the given identifier")
                         .arg(Arg::with_name("instance_id")
