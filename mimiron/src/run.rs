@@ -58,6 +58,14 @@ pub fn run() -> Result<i32> {
         }
     } else if let Some(event_matches) = matches.subcommand_matches("event") {
         match event_matches.subcommand() {
+            ("delete", Some(delete_matches)) => {
+                match delete_matches.subcommand() {
+                    ("subscription", Some(subscr_matches)) => {
+                        event::delete::subscriptions(Region::UsEast2, subscr_matches)?;
+                    }
+                    _ => return Err(ErrorKind::InvalidCommand.into()),
+                }
+            }
             ("describe", Some(describe_matches)) => {
                 match describe_matches.subcommand() {
                     ("categories", Some(categories_matches)) => {
