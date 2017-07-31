@@ -161,7 +161,7 @@ fn stmt_res(ctxt: &Context) -> Result<()> {
     assert_eq!(num_rows_fetched, 1);
     assert!(!more_rows);
 
-    /// get_bind_count / get_bind_names / get_batch_error_count / get_info tests
+    // get_bind_count / get_bind_names / get_batch_error_count / get_info tests
     let bn = conn.prepare_stmt(Some("insert into username values (:id, :username)"),
                                None,
                                false)?;

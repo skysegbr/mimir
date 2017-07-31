@@ -46,7 +46,7 @@ mod util;
 mod variable;
 
 // Public API
-#[allow(missing_docs)]
+#[allow(missing_docs, unused_doc_comment)]
 pub mod error;
 
 pub use connection::Connection;

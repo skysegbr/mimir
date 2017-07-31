@@ -28,7 +28,7 @@ fn enqueue_res(ctxt: &Context) -> Result<()> {
     enqueue_opts.set_delivery_mode(Buffered)?;
 
     enqueue_opts.set_transformation(Some("tsfm"))?;
-    /// TODO: Fix this test, doesn't seem to work.
+    // TODO: Fix this test, doesn't seem to work.
     // let transformation = enqueue_opts.get_transformation()?;
     // assert_eq!(transformation, "tsfm");
 
