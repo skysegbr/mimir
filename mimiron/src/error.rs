@@ -10,6 +10,7 @@
 error_chain!{
     foreign_links {
         Credentials(::rusoto_core::CredentialsError);
+        CreateEventSubscription(::rusoto_rds::CreateEventSubscriptionError);
         DeleteEventSubscription(::rusoto_rds::DeleteEventSubscriptionError);
         DescribeDBInstances(::rusoto_rds::DescribeDBInstancesError);
         DescribeEventCategories(::rusoto_rds::DescribeEventCategoriesError);

@@ -21,7 +21,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .subcommand(subscription_subcommand())
 }
 
-/// Description for Event Subscriptions
+/// Delete an Event Subscription
 pub fn subscriptions(region: Region, matches: &ArgMatches) -> Result<()> {
     let mut stdout = term::stdout().ok_or_else(|| ErrorKind::CreateTerm)?;
     let provider = ProfileProvider::new()?;
@@ -68,5 +68,6 @@ pub fn subscriptions(region: Region, matches: &ArgMatches) -> Result<()> {
         stdout.reset()?;
         stdout.flush()?;
     }
+
     Ok(())
 }

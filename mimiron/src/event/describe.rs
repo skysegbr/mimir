@@ -269,9 +269,10 @@ pub fn subscriptions(region: Region, matches: &ArgMatches) -> Result<()> {
             }
 
             writeln!(stdout,
-                     " {} {}",
+                     " {} {} {}",
                      or_none!(subscription.cust_subscription_id),
-                     or_none!(b => subscription.enabled))?;
+                     or_none!(b => subscription.enabled),
+                     or_none!(subscription.sns_topic_arn))?;
             stdout.reset()?;
             stdout.flush()?;
         }

@@ -21,6 +21,7 @@ extern crate rusoto_core;
 extern crate rusoto_rds;
 extern crate term;
 
+#[cfg_attr(feature = "cargo-clippy", allow(unused_doc_comment))]
 mod error;
 mod event;
 mod run;
