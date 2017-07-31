@@ -61,11 +61,37 @@ pub fn subscription(region: Region, matches: &ArgMatches) -> Result<()> {
     let client = RdsClient::new(tls_client, provider, region);
     let mut message: CreateEventSubscriptionMessage = Default::default();
 
-    if let Some(arn) = matches.value_of("subscr_arn") {
+    if let Some(arn) = matches.value_of("sns_topic_arn") {
         message.sns_topic_arn = arn.to_string();
     }
 
+    if let Some(name) = matches.value_of("subscription_name") {
+        message.subscription_name = name.to_string();
+    }
+
     message.enabled = Some(!matches.is_present("disabled"));
+
+    if let Some(categories) = matches.values_of("category") {
+        let mut categories_vec = Vec::new();
+        for category in categories {
+            categories_vec.push(category.to_string());
+        }
+
+        message.event_categories = Some(categories_vec);
+    }
+
+    if let Some(source_ids) = matches.values_of("source_id") {
+        let mut source_ids_vec = Vec::new();
+        for source_id in source_ids {
+            source_ids_vec.push(source_id.to_string());
+        }
+
+        message.source_ids = Some(source_ids_vec);
+    }
+
+    if let Some(source_type) = matches.value_of("source_type") {
+        message.source_type = Some(source_type.to_string());
+    }
 
     let res_message = client.create_event_subscription(&message)?;
 

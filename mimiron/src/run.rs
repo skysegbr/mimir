@@ -8,6 +8,7 @@
 
 //! `mimiron` runtime
 use clap::{App, AppSettings, Arg, SubCommand};
+use db;
 use event;
 use error::{ErrorKind, Result};
 use rusoto_core::{default_tls_client, ProfileProvider, Region};
@@ -28,6 +29,7 @@ pub fn run() -> Result<i32> {
         .subcommand(SubCommand::with_name("create")
                         .about("Create an Oracle RDS instance.")
                         .arg(Arg::with_name("instance_id").help("The unique instance identifier")))
+        .subcommand(db::subcommand())
         .subcommand(event::subcommand(&range))
         .subcommand(SubCommand::with_name("start")
                         .about("Start an RDS instance with the given identifier")
@@ -57,39 +59,7 @@ pub fn run() -> Result<i32> {
             let _db_instance = client.start_db_instance(&start_message)?;
         }
     } else if let Some(event_matches) = matches.subcommand_matches("event") {
-        match event_matches.subcommand() {
-            ("create", Some(delete_matches)) => {
-                match delete_matches.subcommand() {
-                    ("subscription", Some(subscr_matches)) => {
-                        event::create::subscription(Region::UsEast2, subscr_matches)?;
-                    }
-                    _ => return Err(ErrorKind::InvalidCommand.into()),
-                }
-            }
-            ("delete", Some(delete_matches)) => {
-                match delete_matches.subcommand() {
-                    ("subscription", Some(subscr_matches)) => {
-                        event::delete::subscriptions(Region::UsEast2, subscr_matches)?;
-                    }
-                    _ => return Err(ErrorKind::InvalidCommand.into()),
-                }
-            }
-            ("describe", Some(describe_matches)) => {
-                match describe_matches.subcommand() {
-                    ("categories", Some(categories_matches)) => {
-                        event::describe::categories(Region::UsEast2, categories_matches)?;
-                    }
-                    ("events", Some(events_matches)) => {
-                        event::describe::events(Region::UsEast2, events_matches)?;
-                    }
-                    ("subscriptions", Some(subscr_matches)) => {
-                        event::describe::subscriptions(Region::UsEast2, subscr_matches)?;
-                    }
-                    _ => return Err(ErrorKind::InvalidCommand.into()),
-                }
-            }
-            _ => return Err(ErrorKind::InvalidCommand.into()),
-        }
+        event::dispatch(event_matches)?;
     } else if let Some(start_matches) = matches.subcommand_matches("start") {
         if let Some(instance_id) = start_matches.value_of("instance_id") {
             let mut start_message: StartDBInstanceMessage = Default::default();
