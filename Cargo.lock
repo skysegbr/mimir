@@ -482,7 +482,7 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.1.28"
+version = "0.1.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -788,7 +788,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "redox_syscall 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "redox_syscall 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -958,7 +958,7 @@ dependencies = [
 "checksum rand 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)" = "eb250fd207a4729c976794d03db689c9be1d634ab5a1c9da9492a13d8fecbcdf"
 "checksum rayon 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a77c51c07654ddd93f6cb543c7a849863b03abc7e82591afda6dc8ad4ac3ac4a"
 "checksum rayon-core 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7febc28567082c345f10cddc3612c6ea020fc3297a1977d472cf9fdb73e6e493"
-"checksum redox_syscall 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)" = "ddab7acd8e7bf3e49dfdf78ac1209b992329eb2f66e0bf672ab49c70a76d1d68"
+"checksum redox_syscall 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)" = "3c9309631a35303bffb47e397198e3668cb544fe8834cd3da2a744441e70e524"
 "checksum regex 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1731164734096285ec2a5ec7fea5248ae2f5485b3feeb0115af4fda2183b2d1b"
 "checksum regex-syntax 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ad890a5eef7953f55427c50575c680c42841653abd2b028b68cd223d157f62db"
 "checksum reqwest 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3bef9ed8fdfcc30947d6b774938dc0c3f369a474efe440df2c7f278180b2d2e6"
